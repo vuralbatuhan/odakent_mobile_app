@@ -1,0 +1,398 @@
+const express = require('express');
+const cors = require('cors');
+const http = require('http');
+const {Server} = require('socket.io');
+const {Pool} = require('pg');
+
+// const pool = new Pool({
+//   user: "isler_test",
+//   host: "10.0.0.65",
+//   database: "odakent_isler",
+//   password: "isler_test",
+//   port: 5432,
+// });
+
+const pool = new Pool({
+  user: 'postgres',
+  host: 'localhost',
+  database: 'postgres',
+  password: 'postgres',
+  port: 5432,
+});
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: '*',
+    methods: ['GET', 'POST'],
+  },
+});
+
+io.on('connection', socket => {
+  console.log('Yeni kullanıcı bağlandı:', socket.id);
+
+  socket.on('room', roomName => {
+    socket.join(roomName);
+    console.log(`${roomName} odasına katıldınız: ${socket.id}`);
+  });
+
+  socket.on('message', async data => {
+    const {room, username, message, task_id, image, time} = data;
+
+    const query = `
+      INSERT INTO messages (room, username, message, task_id, image, time)
+      VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;
+    `;
+
+    try {
+      const result = await pool.query(query, [
+        room,
+        username,
+        message || null,
+        image || null,
+        task_id,
+        time,
+      ]);
+
+      const savedMessage = result.rows[0];
+
+      io.to(room).emit('messageReturn', {
+        ...data,
+        id: savedMessage.id,
+        timestamp: savedMessage,
+      });
+
+      console.log(`Mesaj gönderildi: ${message || image} - Oda: ${room}`);
+    } catch (error) {
+      console.error('Mesaj kaydedilirken hata:', error);
+    }
+  });
+});
+
+app.post('/messages', async (req, res) => {
+  const {task_id, dosya, ext} = req.body;
+
+  try {
+    const result = await pool.query(
+      `INSERT INTO DOCUMENTS (task_id, dosya, ext) VALUES ($1, $2, $3) RETURNING *;`,
+      [task_id, dosya, ext],
+    );
+
+    if (result.rows.length > 0) {
+      res.json({success: true, message: 'Giriş başarılı!'});
+    } else {
+      res.json({success: false, message: 'Giriş bilgileri hatalı.'});
+    }
+  } catch (error) {
+    console.error('Sunucu hatası:', error);
+    res.status(500).json({success: false, message: 'Sunucu hatası', error});
+  }
+});
+
+app.post('/login', async (req, res) => {
+  const {username, password} = req.body;
+
+  try {
+    const result = await pool.query(
+      'SELECT * FROM users WHERE username = $1 AND password = $2',
+      [username, password],
+    );
+
+    if (result.rows.length > 0) {
+      res.json({success: true, message: 'Giriş başarılı!'});
+    } else {
+      res.json({success: false, message: 'Giriş bilgileri hatalı.'});
+    }
+  } catch (error) {
+    res.status(500).json({success: false, message: 'Sunucu hatası', error});
+  }
+});
+
+app.post('/rooms', async (req, res) => {
+  const {room} = req.body;
+
+  const query = `INSERT INTO rooms (room) VALUES ($1) RETURNING *;`;
+
+  try {
+    const result = await pool.query(query, [room]);
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    res.status(400).json({message: 'Oda oluşturulurken hata oluştu.'});
+  }
+});
+
+app.post('/register', async (req, res) => {
+  const {username, password, room, user_type} = req.body;
+
+  const query = `INSERT INTO users (username, password, room, user_type) VALUES ($1, $2, $3, $4) RETURNING *;`;
+
+  try {
+    const result = await pool.query(query, [
+      username,
+      password,
+      room,
+      user_type,
+    ]);
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    res.status(400).json({message: 'Kullanıcı oluşturulurken hata oluştu.'});
+  }
+});
+
+app.post('/tasks', async (req, res) => {
+  const {title, description, problem, room, image} = req.body;
+
+  const query = ` INSERT INTO tasks (title, description, problem, room, image) VALUES ($1, $2, $3, $4, $5) RETURNING id;`;
+
+  try {
+    const result = await pool.query(query, [
+      title,
+      description,
+      problem,
+      room,
+      image,
+    ]);
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    res.status(400).json({message: 'Task eklenemedi', error});
+  }
+});
+
+app.post('/problems', async (req, res) => {
+  const {problem} = req.body;
+
+  const query = `INSERT INTO problems (problem) VALUES ($1) RETURNING *;`;
+
+  try {
+    const result = await pool.query(query, [problem]);
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    res.status(400).json({message: 'Problem eklenemedi', error});
+  }
+});
+
+app.post('/status', async (req, res) => {
+  const {statu} = req.body;
+
+  const query = `INSERT INTO status (statu) VALUES ($1) RETURNING *;`;
+
+  try {
+    const result = await pool.query(query, [statu]);
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    res.status(400).json({message: 'Statu eklenemedi', error});
+  }
+});
+
+app.get('/rooms', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM rooms ORDER BY id ASC');
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({message: 'Odalar alınırken hata oluştu.'});
+  }
+});
+
+app.get('/status', async (req, res) => {
+  try {
+    const result = await pool.query('SELECT * FROM status ORDER BY id ASC');
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({message: 'Durumlar alınırken hata oluştu.'});
+  }
+});
+
+app.get('/users/:user', async (req, res) => {
+  const user = req.params.user;
+
+  const query = ` SELECT * FROM users WHERE username = $1;`;
+  try {
+    const result = await pool.query(query, [user]);
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({message: 'HATA'});
+  }
+});
+
+app.get('/users/:username/:password', async (req, res) => {
+  const username = req.params.username;
+  const password = req.params.password;
+
+  const query = ` SELECT * FROM users WHERE username = $1 AND password = $2;`;
+  try {
+    const result = await pool.query(query, [username, password]);
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({message: 'HATA'});
+  }
+});
+
+app.get('/messages/:room', async (req, res) => {
+  const room = req.params.room;
+
+  const query = ` SELECT * FROM messages WHERE room = $1 ORDER BY id ASC`;
+
+  try {
+    const result = await pool.query(query, [room]);
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({message: 'Mesajlar alınırken hata oluştu.'});
+  }
+});
+
+app.get('/messages/:room/:task_id', async (req, res) => {
+  const room = req.params.room;
+  const id = req.params.task_id;
+
+  const query =
+    ' SELECT * FROM messages WHERE room = $1 AND task_id = $2 ORDER BY(id) ASC';
+
+  try {
+    const result = await pool.query(query, [room, id]);
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({message: 'Mesajlar alınırken hata oluştu.'});
+  }
+});
+
+app.get('/tasks', async (req, res) => {
+  const query = `	SELECT * FROM tasks ORDER BY room, statu_id ASC;;
+`;
+
+  try {
+    const result = await pool.query(query);
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({message: 'Task yüklenemedi'});
+  }
+});
+
+app.get('/tasks/:room', async (req, res) => {
+  const room = req.params.room;
+  const query = `SELECT * FROM tasks where room = $1 ORDER BY statu_id, problem_id ASC;
+`;
+
+  try {
+    const result = await pool.query(query, [room]);
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({message: 'Task yüklenemedi'});
+  }
+});
+
+app.get('/tasks/admin/:problem', async (req, res) => {
+  const problem = req.params.problem;
+  const query = `SELECT * FROM tasks where problem = $1 ORDER BY room, statu_id ASC;
+`;
+
+  try {
+    const result = await pool.query(query, [problem]);
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({message: 'Problem yüklenemedi'});
+  }
+});
+
+app.get('/tasks/:problem/:room', async (req, res) => {
+  const problem = req.params.problem;
+  const room = req.params.room;
+
+  const query = `SELECT * FROM tasks WHERE problem = $1 AND room = $2 ORDER BY statu_id ASC`;
+
+  try {
+    const result = await pool.query(query, [problem, room]);
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({message: 'Task yüklenemedi'});
+  }
+});
+
+app.get('/tasks/:problem/:room/:id', async (req, res) => {
+  const problem = req.params.problem;
+  const room = req.params.room;
+
+  const query = `SELECT * FROM tasks WHERE problem = $1 AND room = $2 AND id = $3`;
+
+  try {
+    const result = await pool.query(query, [problem, room]);
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({message: 'Task yüklenemedi'});
+  }
+});
+
+app.get('/problems', async (req, res) => {
+  const problem = req.params.problem;
+
+  const query = `SELECT * FROM PROBLEMS`;
+
+  try {
+    const result = await pool.query(query);
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({message: 'Problem yüklenemedi'});
+  }
+});
+
+app.put('/tasks/update/statu', async (req, res) => {
+  const {id, statu_id} = req.body;
+
+  const query = `
+    UPDATE tasks
+    SET statu_id = $1
+    WHERE id = $2;
+  `;
+
+  try {
+    const result = await pool.query(query, [statu_id, id]);
+
+    if (result.rowCount === 0) {
+      return res.status(404).json({message: 'Task not found'});
+    }
+
+    res.json({
+      message: 'Task updated successfully',
+      updatedTask: {id, statu_id},
+    });
+  } catch (error) {
+    console.error('Error updating task:', error);
+    res
+      .status(500)
+      .json({message: 'An error occurred while updating the task'});
+  }
+});
+
+app.delete('/messages/:room', async (req, res) => {
+  const room = req.params.room;
+
+  const query = ` DELETE FROM messages WHERE room = $1;`;
+
+  try {
+    await pool.query(query, [room]);
+    res.status(204).send();
+  } catch (error) {
+    res.status(500).json({message: 'Mesajlar silinirken hata oluştu.'});
+  }
+});
+
+app.delete('/tasks/:id', async (req, res) => {
+  const id = req.params.id;
+
+  const query = `DELETE FROM tasks WHERE id = $1`;
+
+  try {
+    await pool.query(query, [id]);
+    res.status(204).send();
+  } catch (error) {
+    res.status(500).json({message: 'Görev silinirken bir hata oluştu'});
+  }
+});
+
+const PORT = 5000;
+server.listen(PORT, () => {
+  console.log(`Server ${PORT} portunda çalışıyor`);
+});
