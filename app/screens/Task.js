@@ -24,7 +24,7 @@ import {
   fetchRoomGroupName,
   addItem,
 } from '../api/TaskApiFunctions.js';
-import {pickImage} from '../utils/Utils.js';
+import {pickFile} from '../utils/Utils.js';
 import {logout} from '../utils/Logout';
 
 const Task = ({navigation, route}) => {
@@ -430,7 +430,8 @@ const Task = ({navigation, route}) => {
             <View style={styles.buttonContainer}>
               <TouchableOpacity
                 style={styles.imageCamera}
-                onPress={() => pickImage(setImageUri)}>
+                //onPress={() => pickImage(setImageUri)}
+              >
                 <Text>buraya bas</Text>
               </TouchableOpacity>
               <TouchableOpacity

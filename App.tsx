@@ -70,7 +70,7 @@ import io from 'socket.io-client';
 
 const Stack = createNativeStackNavigator();
 // const Tab = createBottomTabNavigator();
-const socket = io.connect('http://192.168.1.36:5000');
+const socket = io.connect('http://192.168.1.124:5000');
 
 function App() {
   const [username, setUsername] = useState('');

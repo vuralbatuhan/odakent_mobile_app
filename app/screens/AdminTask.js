@@ -24,7 +24,7 @@ import {
   fetchAllProblemItems,
   addItem,
 } from '../api/AdminTaskApiFunctions.js';
-import {pickImage} from '../utils/Utils.js';
+import {pickFile} from '../utils/Utils.js';
 import {logout} from '../utils/Logout';
 //import {Octicons, SimpleLineIcons} from '@expo/vector-icons';
 
@@ -112,6 +112,7 @@ const AdminTask = ({navigation, route}) => {
       try {
         const fetchedProblems = await fetchProblems();
         const fetchedRooms = await fetchRooms();
+        console.log('11', fetchedRooms.id);
         setProblems(fetchedProblems);
         setRooms(fetchedRooms);
       } catch (error) {
@@ -211,6 +212,7 @@ const AdminTask = ({navigation, route}) => {
       statu_id: item.statu_id,
       userTypeId: userTypeId,
       username: username,
+      room_id: item.room_id,
     });
   };
   return (
@@ -480,7 +482,8 @@ const AdminTask = ({navigation, route}) => {
               <View style={styles.buttonContainer}>
                 <TouchableOpacity
                   style={styles.imageCamera}
-                  onPress={() => pickImage(setImageUri)}>
+                  //onPress={() => pickFile(setImageUri)}
+                >
                   <Text>buraya bas</Text>
                 </TouchableOpacity>
                 <TouchableOpacity

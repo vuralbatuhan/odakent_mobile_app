@@ -3,6 +3,7 @@ const cors = require('cors');
 const http = require('http');
 const {Server} = require('socket.io');
 const {Pool} = require('pg');
+const {Buffer} = require('buffer');
 
 // const pool = new Pool({
 //   user: "isler_test",
@@ -40,8 +41,45 @@ io.on('connection', socket => {
     console.log(`${roomName} odasına katıldınız: ${socket.id}`);
   });
 
+  // socket.on('message', async data => {
+  //   const {room, username, message, task_id, image, time} = data;
+
+  //   const query = `
+  //     INSERT INTO messages (room, username, message, task_id, image, time)
+  //     VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;
+  //   `;
+
+  //   try {
+  //     const result = await pool.query(query, [
+  //       room,
+  //       username,
+  //       message || null,
+  //       image || null,
+  //       task_id,
+  //       time,
+  //     ]);
+
+  //     const savedMessage = result.rows[0];
+
+  //     io.to(room).emit('messageReturn', {
+  //       ...data,
+  //       id: savedMessage.id,
+  //       timestamp: savedMessage,
+  //     });
+
+  //     console.log(`Mesaj gönderildi: ${message || image} - Oda: ${room}`);
+  //   } catch (error) {
+  //     console.error('Mesaj kaydedilirken hata:', error);
+  //   }
+  // });
   socket.on('message', async data => {
     const {room, username, message, task_id, image, time} = data;
+
+    let imageBase64 = null;
+    if (image) {
+      const buffer = Buffer.from(image, 'binary');
+      imageBase64 = `data:image/jpeg;base64,${buffer.toString('base64')}`;
+    }
 
     const query = `
       INSERT INTO messages (room, username, message, task_id, image, time)
@@ -53,7 +91,7 @@ io.on('connection', socket => {
         room,
         username,
         message || null,
-        image || null,
+        imageBase64 || null,
         task_id,
         time,
       ]);
@@ -63,7 +101,8 @@ io.on('connection', socket => {
       io.to(room).emit('messageReturn', {
         ...data,
         id: savedMessage.id,
-        timestamp: savedMessage,
+        timestamp: savedMessage.timestamp,
+        image: imageBase64,
       });
 
       console.log(`Mesaj gönderildi: ${message || image} - Oda: ${room}`);
@@ -74,6 +113,26 @@ io.on('connection', socket => {
 });
 
 app.post('/messages', async (req, res) => {
+  const {room, room_id, username, image, task_id} = req.body;
+
+  try {
+    const result = await pool.query(
+      `INSERT INTO messages (room, room_id, username, image, task_id) VALUES ($1, $2, $3, $4, $5) RETURNING *;`,
+      [room, room_id, username, image, task_id],
+    );
+
+    if (result.rows.length > 0) {
+      res.json({success: true, message: 'Giriş başarılı!'});
+    } else {
+      res.json({success: false, message: 'Giriş bilgileri hatalı.'});
+    }
+  } catch (error) {
+    console.error('Sunucu hatası:', error);
+    res.status(500).json({success: false, message: 'Sunucu hatası', error});
+  }
+});
+
+app.post('/documents', async (req, res) => {
   const {task_id, dosya, ext} = req.body;
 
   try {

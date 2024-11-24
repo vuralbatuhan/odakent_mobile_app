@@ -3,7 +3,7 @@ export const fetchMessages = async (room, id) => {
 
   try {
     const response = await fetch(
-      `http://192.168.1.36:5000/messages/${room}/${id}`,
+      `http://192.168.1.124:5000/messages/${room}/${id}`,
     );
     if (!response.ok) {
       throw new Error('Mesajlar alınırken hata oluştu: ' + response.statusText);
@@ -18,7 +18,7 @@ export const fetchMessages = async (room, id) => {
 export const updateProblem = async (id, statu_id) => {
   try {
     const response = await fetch(
-      'http://192.168.1.36:5000/tasks/update/statu',
+      'http://192.168.1.124:5000/tasks/update/statu',
       {
         method: 'PUT',
         headers: {'Content-Type': 'application/json'},
@@ -40,7 +40,7 @@ export const updateProblem = async (id, statu_id) => {
 
 export const deleteTask = async id => {
   try {
-    const response = await fetch(`http://192.168.1.36:5000/tasks/${id}`, {
+    const response = await fetch(`http://192.168.1.124:5000/tasks/${id}`, {
       method: 'DELETE',
       headers: {'Content-Type': 'application/json'},
     });

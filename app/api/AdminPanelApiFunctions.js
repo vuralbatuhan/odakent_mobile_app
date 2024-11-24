@@ -1,6 +1,6 @@
 export const createRoom = async room => {
   try {
-    const response = await fetch('http://192.168.1.36:5000/rooms', {
+    const response = await fetch('http://192.168.1.124:5000/rooms', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -24,7 +24,7 @@ export const createRoom = async room => {
 
 export const createProblem = async problem => {
   try {
-    const response = await fetch('http://192.168.1.36:5000/problems', {
+    const response = await fetch('http://192.168.1.124:5000/problems', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -48,7 +48,7 @@ export const createProblem = async problem => {
 
 export const createStatu = async statu => {
   try {
-    const response = await fetch('http://192.168.1.36:5000/status', {
+    const response = await fetch('http://192.168.1.124:5000/status', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -72,7 +72,7 @@ export const createStatu = async statu => {
 
 export const createUser = async (username, password, room, user_type) => {
   try {
-    const response = await fetch('http://192.168.1.36:5000/register', {
+    const response = await fetch('http://192.168.1.124:5000/register', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -96,7 +96,7 @@ export const createUser = async (username, password, room, user_type) => {
 
 export const fetchRooms = async () => {
   try {
-    const response = await fetch('http://192.168.1.36:5000/rooms');
+    const response = await fetch('http://192.168.1.124:5000/rooms');
     const data = await response.json();
 
     const formattedData = data.map(item => ({
@@ -113,7 +113,7 @@ export const fetchRooms = async () => {
 
 export const fetchProblems = async () => {
   try {
-    const response = await fetch('http://192.168.1.36:5000/problems');
+    const response = await fetch('http://192.168.1.124:5000/problems');
     const data = await response.json();
 
     const formattedData = data.map(item => ({
@@ -130,7 +130,7 @@ export const fetchProblems = async () => {
 
 export const fetchStatus = async () => {
   try {
-    const response = await fetch('http://192.168.1.36:5000/status');
+    const response = await fetch('http://192.168.1.124:5000/status');
     const data = await response.json();
 
     const formattedData = data.map(item => ({
