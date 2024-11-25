@@ -1,6 +1,3 @@
-//192.168.1.124:5000
-//192.168.1.36:-5000
-//192.168.1.124:5000
 import React, {useState, useEffect} from 'react';
 import {
   View,
@@ -37,7 +34,7 @@ const Room = ({navigation}) => {
 
         if (storedUsername && storedPassword && isCheckedStored === 'true') {
           const response = await fetch(
-            `http://192.168.1.124:5000/users/${storedUsername}/${storedPassword}`,
+            `http://192.168.1.36:5000/users/${storedUsername}/${storedPassword}`,
             {
               method: 'GET',
               headers: {'Content-Type': 'application/json'},
@@ -56,11 +53,11 @@ const Room = ({navigation}) => {
             });
           }
         } else {
-          setIsLoading(false); // Kullanıcı daha önce giriş yapmamışsa
+          setIsLoading(false);
         }
       } catch (error) {
         console.error('Error reading stored credentials:', error);
-        setIsLoading(false); // Hata olursa login ekranını göster
+        setIsLoading(false);
       }
     };
 
@@ -82,7 +79,7 @@ const Room = ({navigation}) => {
     }
 
     try {
-      const response = await fetch('http://192.168.1.124:5000/login', {
+      const response = await fetch('http://192.168.1.36:5000/login', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({username, password}),
@@ -101,7 +98,7 @@ const Room = ({navigation}) => {
         }
 
         const userResponse = await fetch(
-          `http://192.168.1.124:5000/users/${username}/${password}`,
+          `http://192.168.1.36:5000/users/${username}/${password}`,
           {
             method: 'GET',
             headers: {'Content-Type': 'application/json'},
@@ -130,7 +127,6 @@ const Room = ({navigation}) => {
     }
   };
 
-  // Eğer isLoading true ise sadece loading göstergesi render edilir
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -174,13 +170,7 @@ const Room = ({navigation}) => {
           />
           <TouchableOpacity
             onPress={togglePasswordVisibility}
-            style={styles.eyeIcon}>
-            {/* <Ionicons
-              name={isPasswordVisible ? 'user' : 'coffee'}
-              color="#ff0000"
-              size={20}
-            /> */}
-          </TouchableOpacity>
+            style={styles.eyeIcon}></TouchableOpacity>
         </View>
         <View style={styles.checkboxContainer}>
           <BouncyCheckbox

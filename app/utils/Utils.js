@@ -113,10 +113,10 @@ export const pickFile = async (setFileUri, task_id) => {
 };
 
 export const pickFileMessages = async (
-  setFileUri,
   room,
   room_id,
   username,
+  setFileUri,
   task_id,
 ) => {
   Alert.alert('Seçiniz', 'Eklemek istediğiniz dosyayı seçin:', [
@@ -192,7 +192,7 @@ const sendToDocuments = async (byteaData, extension, task_id) => {
   const formattedData = `\\x${hexData}`;
 
   try {
-    const response = await fetch('http://192.168.1.124:5000/documents', {
+    const response = await fetch('http://192.168.1.36:5000/documents', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -219,7 +219,7 @@ const sendToMessages = async (room, room_id, username, image, task_id) => {
   const hexData = image.toString('hex');
   const formattedData = `\\x${hexData}`;
   try {
-    const response = await fetch('http://192.168.1.124:5000/messages', {
+    const response = await fetch('http://192.168.1.36:5000/messages', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -242,5 +242,47 @@ const sendToMessages = async (room, room_id, username, image, task_id) => {
   } catch (error) {
     console.error('Backend bağlantı hatası:', error);
     Alert.alert('Hata', 'Bir hata oluştu.');
+  }
+};
+const base64ToByteArray = base64 => {
+  const binaryString = atob(base64); // Base64 string'i binary string'e çevir
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len); // Yeni bir byte array oluştur
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i); // Her byte'ı array'e aktar
+  }
+  return bytes;
+};
+
+export const addItem = async (
+  title,
+  text,
+  selectedProblem,
+  imageUri, // imageUri Base64 formatında
+  roomGroupName,
+) => {
+  const imageData = imageUri.replace(/^data:image\/[a-z]+;base64,/, ''); // Base64 başlığını temizle
+  const imageByteArray = base64ToByteArray(imageData); // Base64'ü byte array'e çevir
+
+  try {
+    const response = await fetch('http://192.168.1.36:5000/tasks', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        title,
+        description: text,
+        problem: selectedProblem,
+        image: imageByteArray, // Byte array formatında image verisi gönder
+        room: roomGroupName,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Error adding item.');
+    }
+    return true;
+  } catch (error) {
+    console.error('Error adding item:', error);
+    return false;
   }
 };

@@ -20,10 +20,7 @@ import {
 } from '../api/AdminPanelApiFunctions';
 import styles from '../css/AdminPanelStyle';
 import {Dropdown} from 'react-native-element-dropdown';
-//import AntDesign from '@expo/vector-icons/AntDesign';
-//import {Feather} from '@expo/vector-icons';
 import {Kohana} from 'react-native-textinput-effects';
-import {MaterialCommunityIcons} from '@expo/vector-icons';
 import {TextInput as PaperTextInput} from 'react-native-paper';
 
 const AdminPanel = ({navigation}) => {

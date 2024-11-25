@@ -1,6 +1,6 @@
 export const fetchProblems = async () => {
   try {
-    const response = await fetch('http://192.168.1.124:5000/problems');
+    const response = await fetch('http://192.168.1.36:5000/problems');
     const data = await response.json();
     const formattedData = data.map(item => ({
       label: item.problem,
@@ -17,7 +17,7 @@ export const fetchProblems = async () => {
 export const fetchItems = async (problem, roomGroupName) => {
   try {
     const response = await fetch(
-      `http://192.168.1.124:5000/tasks/${problem}/${roomGroupName}`,
+      `http://192.168.1.36:5000/tasks/${problem}/${roomGroupName}`,
     );
     const data = await response.json();
     return data;
@@ -30,7 +30,7 @@ export const fetchItems = async (problem, roomGroupName) => {
 export const fetchAllItems = async roomGroupName => {
   try {
     const response = await fetch(
-      `http://192.168.1.124:5000/tasks/${roomGroupName}`,
+      `http://192.168.1.36:5000/tasks/${roomGroupName}`,
     );
     const data = await response.json();
     return data;
@@ -42,7 +42,7 @@ export const fetchAllItems = async roomGroupName => {
 
 export const fetchRoomGroupName = async username => {
   try {
-    const response = await fetch(`http://192.168.1.124:5000/users/${username}`);
+    const response = await fetch(`http://192.168.1.36:5000/users/${username}`);
     if (!response.ok) {
       throw new Error('Hata oluştu: ' + response.statusText);
     }
@@ -62,7 +62,7 @@ export const addItem = async (
   roomGroupName,
 ) => {
   try {
-    const response = await fetch('http://192.168.1.124:5000/tasks', {
+    const response = await fetch('http://192.168.1.36:5000/tasks', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({

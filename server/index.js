@@ -75,6 +75,10 @@ io.on('connection', socket => {
   socket.on('message', async data => {
     const {room, username, message, task_id, image, time} = data;
 
+    const currentTime =
+      time ||
+      new Date().toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'});
+
     let imageBase64 = null;
     if (image) {
       const buffer = Buffer.from(image, 'binary');
@@ -82,8 +86,8 @@ io.on('connection', socket => {
     }
 
     const query = `
-      INSERT INTO messages (room, username, message, task_id, image, time)
-      VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;
+        INSERT INTO messages (room, username, message, task_id, image, time)
+        VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;
     `;
 
     try {
@@ -91,9 +95,9 @@ io.on('connection', socket => {
         room,
         username,
         message || null,
-        imageBase64 || null,
         task_id,
-        time,
+        imageBase64 || null,
+        currentTime,
       ]);
 
       const savedMessage = result.rows[0];
@@ -105,9 +109,13 @@ io.on('connection', socket => {
         image: imageBase64,
       });
 
-      console.log(`Mesaj gönderildi: ${message || image} - Oda: ${room}`);
+      console.log(
+        `Message sent: ${
+          message || 'Image'
+        } - Room: ${room} - Task ID: ${task_id}`,
+      );
     } catch (error) {
-      console.error('Mesaj kaydedilirken hata:', error);
+      console.error('Error saving message:', error);
     }
   });
 });
@@ -204,8 +212,9 @@ app.post('/register', async (req, res) => {
 
 app.post('/tasks', async (req, res) => {
   const {title, description, problem, room, image} = req.body;
+  const imageBuffer = Buffer.from(image, 'base64');
 
-  const query = ` INSERT INTO tasks (title, description, problem, room, image) VALUES ($1, $2, $3, $4, $5) RETURNING id;`;
+  const query = ` INSERT INTO tasks (title, description, problem, room, image) VALUES ($1, $2, $3, $4, $5) RETURNING *;`;
 
   try {
     const result = await pool.query(query, [
@@ -213,7 +222,7 @@ app.post('/tasks', async (req, res) => {
       description,
       problem,
       room,
-      image,
+      imageBuffer,
     ]);
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -370,14 +379,15 @@ app.get('/tasks/:problem/:room', async (req, res) => {
   }
 });
 
-app.get('/tasks/:problem/:room/:id', async (req, res) => {
-  const problem = req.params.problem;
-  const room = req.params.room;
+app.get('/tasks/:problem_id/:room_id/:id', async (req, res) => {
+  const problem_id = req.params.problem_id;
+  const room_id = req.params.room_id;
+  const id = req.params.id;
 
-  const query = `SELECT * FROM tasks WHERE problem = $1 AND room = $2 AND id = $3`;
+  const query = `SELECT * FROM tasks WHERE problem_id = $1 AND room_id = $2 AND id = $3`;
 
   try {
-    const result = await pool.query(query, [problem, room]);
+    const result = await pool.query(query, [problem_id, room_id, id]);
     res.json(result.rows);
   } catch (error) {
     res.status(500).json({message: 'Task yüklenemedi'});

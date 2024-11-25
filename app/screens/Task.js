@@ -12,10 +12,8 @@ import {
 import {SafeAreaView} from 'react-native-safe-area-context';
 import styles from '../css/TaskStyle';
 import {Dropdown} from 'react-native-element-dropdown';
-//import AntDesign from '@expo/vector-icons/AntDesign';
 import {Button} from 'react-native-elements';
-//import {SimpleLineIcons} from '@expo/vector-icons';
-//import { Octicons } from '@expo/vector-icons';
+import {Buffer} from 'buffer';
 
 import {
   fetchProblems,
@@ -160,6 +158,7 @@ const Task = ({navigation, route}) => {
       roomGroupName,
     );
     if (result) {
+      console.log(imageUri);
       fetchData(selectedProblem);
       setTitle('');
       setText('');
@@ -202,6 +201,8 @@ const Task = ({navigation, route}) => {
       id: item.id,
       room: item.room,
       username: username,
+      room_id: item.room_id,
+      problem_id: item.problem_id,
     });
   };
 
@@ -212,7 +213,6 @@ const Task = ({navigation, route}) => {
           <TouchableOpacity
             style={styles.logoutButton}
             onPress={() => setModalLogout(true)}>
-            {/* <SimpleLineIcons name="logout" size={24} color="black" /> */}
             <Text style={styles.logoutText}>Çıkış Yap</Text>
           </TouchableOpacity>
         )}
@@ -242,9 +242,6 @@ const Task = ({navigation, route}) => {
             setIsFocus(false);
             fetchData();
           }}
-          // renderLeftIcon={() => (
-          //   <AntDesign style={styles.icon} name="check" size={20} />
-          // )}
         />
         <View style={styles.checkboxAllContainer}>
           <View style={styles.checkboxColumn}>
@@ -309,12 +306,6 @@ const Task = ({navigation, route}) => {
           value={searchQuery}
           onChangeText={handleSearch}
         />
-        {/* <AntDesign
-          name="search1"
-          size={20}
-          color="gray"
-          style={styles.searchIcon}
-        /> */}
       </View>
 
       <View style={styles.contentContainer}>
@@ -323,73 +314,98 @@ const Task = ({navigation, route}) => {
           keyExtractor={item =>
             item.id ? item.id.toString() : Math.random().toString()
           }
-          renderItem={({item}) => (
-            <TouchableOpacity onPress={() => handleRowPress(item)}>
-              <View style={styles.itemContainer}>
-                <Text style={styles.titleText}>{item.title}</Text>
-                <View style={styles.textAndImageContainer}>
-                  {item.image && (
-                    <Image
-                      source={{uri: item.image}}
-                      style={styles.itemImage}
-                    />
-                  )}
-                  <Text style={styles.itemText}>{item.description}</Text>
-                  {/* <View style={styles.statuButton}>
-                    {item.statu_id === 1 ? (
-                      <Button
-                        title="Y"
-                        buttonStyle={styles.statusButton}
-                        titleStyle={{
-                          color: 'black',
+          renderItem={({item}) => {
+            let base64String = '';
+            if (item.image?.data) {
+              const buffer = Buffer.from(item.image.data);
+              base64String = buffer.toString('base64');
+            }
+
+            let imageUri = '';
+            if (base64String) {
+              imageUri = `data:image/jpeg;base64,${base64String}`;
+            }
+
+            return (
+              <TouchableOpacity onPress={() => handleRowPress(item)}>
+                <View style={styles.itemContainer}>
+                  <Text style={styles.titleText}>{item.title}</Text>
+                  <View style={styles.textAndImageContainer}>
+                    {imageUri ? (
+                      <Image
+                        source={{
+                          uri: imageUri, // Base64 formatındaki imageUri kullanılıyor
                         }}
-                        disabled={true}
-                        disabledStyle={{
-                          backgroundColor: '#ed5247',
-                        }}
-                        disabledTitleStyle={{
-                          fontSize: 12,
-                          color: 'black',
-                        }}
+                        style={styles.imagePreview}
                       />
-                    ) : item.statu_id === 2 ? (
-                      <Button
-                        title="D"
-                        buttonStyle={styles.statusButton}
-                        titleStyle={{
-                          color: 'black',
-                          fontSize: 12,
-                        }}
-                        disabled={true}
-                        disabledStyle={{
-                          backgroundColor: '#ffd700',
-                        }}
-                        disabledTitleStyle={{
-                          color: 'black',
-                        }}
-                      />
-                    ) : item.statu_id === 3 ? (
-                      <Button
-                        title="B"
-                        buttonStyle={styles.statusButton}
-                        titleStyle={{
-                          color: 'black',
-                          fontSize: 12,
-                        }}
-                        disabled={true}
-                        disabledStyle={{
-                          backgroundColor: '#25e00f',
-                        }}
-                        disabledTitleStyle={{
-                          color: 'black',
-                        }}
-                      />
-                    ) : null}
-                  </View> */}
+                    ) : (
+                      <Text>No image available</Text> // Eğer image yoksa alternatif bir mesaj gösteriyoruz
+                    )}
+                    <Text style={styles.itemText}>{item.description}</Text>
+                    <Text
+                      style={{
+                        marginEnd: -22,
+                        marginTop: -85,
+                        color: 'blue',
+                      }}>
+                      {item.room}
+                    </Text>
+                    <View style={styles.statuButton}>
+                      {item.statu_id === 1 ? (
+                        <Button
+                          title="Y"
+                          buttonStyle={styles.statusButton}
+                          titleStyle={{
+                            color: 'black',
+                          }}
+                          disabled={true}
+                          disabledStyle={{
+                            backgroundColor: '#ed5250',
+                          }}
+                          disabledTitleStyle={{
+                            fontSize: 14,
+                            color: 'black',
+                          }}
+                        />
+                      ) : item.statu_id === 2 ? (
+                        <Button
+                          title="D"
+                          buttonStyle={styles.statusButton}
+                          titleStyle={{
+                            color: 'black',
+                            fontSize: 14,
+                          }}
+                          disabled={true}
+                          disabledStyle={{
+                            backgroundColor: '#ffd700',
+                          }}
+                          disabledTitleStyle={{
+                            color: 'black',
+                          }}
+                        />
+                      ) : item.statu_id === 3 ? (
+                        <Button
+                          title="B"
+                          buttonStyle={styles.statusButton}
+                          titleStyle={{
+                            color: 'black',
+                            fontSize: 14,
+                          }}
+                          disabled={true}
+                          disabledStyle={{
+                            backgroundColor: '#25e00f',
+                          }}
+                          disabledTitleStyle={{
+                            color: 'black',
+                          }}
+                        />
+                      ) : null}
+                    </View>
+                  </View>
                 </View>
-              </View>
-            </TouchableOpacity>
-          )}
+              </TouchableOpacity>
+            );
+          }}
         />
       </View>
       {visible && (
@@ -407,9 +423,7 @@ const Task = ({navigation, route}) => {
               onPress={() => {
                 setModalVisible(false);
                 closeAndReset();
-              }}>
-              {/* <AntDesign name="close" size={24} color="black" /> */}
-            </TouchableOpacity>
+              }}></TouchableOpacity>
             <TextInput
               placeholder="Görev başlığı"
               value={title}
@@ -430,8 +444,7 @@ const Task = ({navigation, route}) => {
             <View style={styles.buttonContainer}>
               <TouchableOpacity
                 style={styles.imageCamera}
-                //onPress={() => pickImage(setImageUri)}
-              >
+                onPress={() => pickFile(setImageUri, 0)}>
                 <Text>buraya bas</Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -450,13 +463,6 @@ const Task = ({navigation, route}) => {
         onRequestClose={() => setModalLogout(false)}>
         <View style={styles.modalOverlayLogout}>
           <View style={styles.modalLogoutContent}>
-            {/* <Octicons
-              style={styles.closeButton}
-              name="x"
-              size={24}
-              color={'black'}
-              onPress={() => setModalLogout(false)}
-            /> */}
             <Text style={styles.modalTitle}>ÇIKIŞ YAP</Text>
             <Text style={styles.modalDescription}>
               Çıkış yapmak istiyor musunuz ?

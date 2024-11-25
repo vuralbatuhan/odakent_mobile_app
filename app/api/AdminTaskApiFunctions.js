@@ -1,6 +1,6 @@
 export const fetchUserType = async username => {
   try {
-    const response = await fetch(`http://192.168.1.124:5000/users/${username}`);
+    const response = await fetch(`http://192.168.1.36:5000/users/${username}`);
     if (!response.ok) {
       throw new Error('Hata oluştu: ' + response.statusText);
     }
@@ -14,7 +14,7 @@ export const fetchUserType = async username => {
 
 export const fetchRooms = async () => {
   try {
-    const response = await fetch('http://192.168.1.124:5000/rooms');
+    const response = await fetch('http://192.168.1.36:5000/rooms');
     const data = await response.json();
 
     const formattedData = data.map(item => ({
@@ -31,7 +31,7 @@ export const fetchRooms = async () => {
 
 export const fetchProblems = async () => {
   try {
-    const response = await fetch('http://192.168.1.124:5000/problems');
+    const response = await fetch('http://192.168.1.36:5000/problems');
     const data = await response.json();
 
     const formattedData = data.map(item => ({
@@ -49,7 +49,7 @@ export const fetchProblems = async () => {
 export const fetchItems = async (problem, room) => {
   try {
     const response = await fetch(
-      `http://192.168.1.124:5000/tasks/${problem}/${room}`,
+      `http://192.168.1.36:5000/tasks/${problem}/${room}`,
     );
     const data = await response.json();
     return data;
@@ -60,7 +60,7 @@ export const fetchItems = async (problem, room) => {
 
 export const fetchAllItems = async () => {
   try {
-    const response = await fetch(`http://192.168.1.124:5000/tasks`);
+    const response = await fetch(`http://192.168.1.36:5000/tasks`);
     const data = await response.json();
     return data;
   } catch (error) {
@@ -73,8 +73,8 @@ export const fetchAllRoomItems = async (room, problem) => {
   try {
     const url =
       problem === 'all'
-        ? `http://192.168.1.124:5000/tasks/${room}`
-        : `http://192.168.1.124:5000/tasks/${room}?problem=${problem}`;
+        ? `http://192.168.1.36:5000/tasks/${room}`
+        : `http://192.168.1.36:5000/tasks/${room}?problem=${problem}`;
 
     const response = await fetch(url);
     const data = await response.json();
@@ -88,7 +88,7 @@ export const fetchAllRoomItems = async (room, problem) => {
 export const fetchAllProblemItems = async problem => {
   try {
     const response = await fetch(
-      `http://192.168.1.124:5000/tasks/admin/${problem}`,
+      `http://192.168.1.36:5000/tasks/admin/${problem}`,
     );
     const data = await response.json();
     return data;
@@ -108,7 +108,7 @@ export const addItem = async (
 ) => {
   if (text) {
     try {
-      const response = await fetch('http://192.168.1.124:5000/tasks', {
+      const response = await fetch('http://192.168.1.36:5000/tasks', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({

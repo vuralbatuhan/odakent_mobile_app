@@ -3,7 +3,7 @@ export const fetchMessages = async (room, id) => {
 
   try {
     const response = await fetch(
-      `http://192.168.1.124:5000/messages/${room}/${id}`,
+      `http://192.168.1.36:5000/messages/${room}/${id}`,
     );
     if (!response.ok) {
       throw new Error('Mesajlar alınırken hata oluştu: ' + response.statusText);
@@ -18,7 +18,7 @@ export const fetchMessages = async (room, id) => {
 export const updateProblem = async (id, statu_id) => {
   try {
     const response = await fetch(
-      'http://192.168.1.124:5000/tasks/update/statu',
+      'http://192.168.1.36:5000/tasks/update/statu',
       {
         method: 'PUT',
         headers: {'Content-Type': 'application/json'},
@@ -40,7 +40,7 @@ export const updateProblem = async (id, statu_id) => {
 
 export const deleteTask = async id => {
   try {
-    const response = await fetch(`http://192.168.1.124:5000/tasks/${id}`, {
+    const response = await fetch(`http://192.168.1.36:5000/tasks/${id}`, {
       method: 'DELETE',
       headers: {'Content-Type': 'application/json'},
     });
@@ -52,5 +52,18 @@ export const deleteTask = async id => {
   } catch (error) {
     console.error('Görev silinirken hata oluştu:', error);
     throw error;
+  }
+};
+
+export const fetchTaskDetails = async (problem_id, room_id, id) => {
+  try {
+    const response = await fetch(
+      `http://your-backend-url/tasks/${problem_id}/${room_id}/${id}`,
+    );
+    const data = await response.json();
+    return data; // API'den dönen veriyi return ediyoruz
+  } catch (error) {
+    console.error('Veri alınırken hata oluştu:', error);
+    throw error; // Hata durumunda hata fırlatıyoruz
   }
 };
