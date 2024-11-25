@@ -112,7 +112,6 @@ const AdminTask = ({navigation, route}) => {
       try {
         const fetchedProblems = await fetchProblems();
         const fetchedRooms = await fetchRooms();
-        console.log('11', fetchedRooms.id);
         setProblems(fetchedProblems);
         setRooms(fetchedRooms);
       } catch (error) {
@@ -214,7 +213,6 @@ const AdminTask = ({navigation, route}) => {
     setFilteredItems(filteredAllItems);
   };
   const handleRowPress = item => {
-    console.log(item.image);
     navigation.navigate('Detail', {
       title: item.title,
       description: item.description,
@@ -381,8 +379,8 @@ const AdminTask = ({navigation, route}) => {
             renderItem={({item}) => {
               let base64String = '';
               if (item.image?.data) {
-                const buffer = Buffer.from(item.image.data); // Array'den Buffer oluşturuyoruz
-                base64String = buffer.toString('base64'); // Base64 string'e çeviriyoruz
+                const buffer = Buffer.from(item.image.data);
+                base64String = buffer.toString('base64');
               }
 
               let imageUri = '';
@@ -395,15 +393,13 @@ const AdminTask = ({navigation, route}) => {
                   <View style={styles.itemContainer}>
                     <Text style={styles.titleText}>{item.title}</Text>
                     <View style={styles.textAndImageContainer}>
-                      {imageUri ? (
+                      {imageUri && (
                         <Image
                           source={{
-                            uri: imageUri, // Base64 formatındaki imageUri kullanılıyor
+                            uri: imageUri,
                           }}
-                          style={styles.imagePreview}
+                          style={{width: 50, height: 50}}
                         />
-                      ) : (
-                        <Text>No image available</Text> // Eğer image yoksa alternatif bir mesaj gösteriyoruz
                       )}
                       <Text style={styles.itemText}>{item.description}</Text>
                       <Text

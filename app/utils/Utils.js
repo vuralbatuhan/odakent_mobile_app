@@ -53,7 +53,7 @@ export const pickFile = async (setFileUri, task_id) => {
         const result = await launchImageLibrary({
           includeBase64: false,
           selectionLimit: 1,
-          quality: 0.8,
+          quality: 1,
           maxWidth: 100,
           maxHeight: 100,
           mediaType: 'mixed',
@@ -86,7 +86,7 @@ export const pickFile = async (setFileUri, task_id) => {
           mediaType: 'mixed',
           cameraType: 'back',
           includeBase64: false,
-          quality: 0.8,
+          quality: 1,
           maxWidth: 100,
           maxHeight: 100,
         });
@@ -126,7 +126,7 @@ export const pickFileMessages = async (
         const result = await launchImageLibrary({
           includeBase64: false,
           selectionLimit: 1,
-          quality: 0.8,
+          quality: 1,
           maxWidth: 100,
           maxHeight: 100,
           mediaType: 'mixed',
@@ -160,7 +160,7 @@ export const pickFileMessages = async (
           mediaType: 'mixed',
           cameraType: 'back',
           includeBase64: false,
-          quality: 0.8,
+          quality: 1,
           maxWidth: 100,
           maxHeight: 100,
         });
@@ -206,7 +206,6 @@ const sendToDocuments = async (byteaData, extension, task_id) => {
 
     const result = await response.json();
     if (result.success) {
-      Alert.alert('Başarı', 'Dosya başarıyla yüklendi!');
     } else {
       Alert.alert('Hata', result.message);
     }
@@ -235,7 +234,6 @@ const sendToMessages = async (room, room_id, username, image, task_id) => {
 
     const result = await response.json();
     if (result.success) {
-      Alert.alert('Başarı', 'Dosya başarıyla yüklendi!');
     } else {
       Alert.alert('Hata', result.message);
     }
@@ -244,45 +242,45 @@ const sendToMessages = async (room, room_id, username, image, task_id) => {
     Alert.alert('Hata', 'Bir hata oluştu.');
   }
 };
-const base64ToByteArray = base64 => {
-  const binaryString = atob(base64); // Base64 string'i binary string'e çevir
-  const len = binaryString.length;
-  const bytes = new Uint8Array(len); // Yeni bir byte array oluştur
-  for (let i = 0; i < len; i++) {
-    bytes[i] = binaryString.charCodeAt(i); // Her byte'ı array'e aktar
-  }
-  return bytes;
-};
+// const base64ToByteArray = base64 => {
+//   const binaryString = atob(base64); // Base64 string'i binary string'e çevir
+//   const len = binaryString.length;
+//   const bytes = new Uint8Array(len); // Yeni bir byte array oluştur
+//   for (let i = 0; i < len; i++) {
+//     bytes[i] = binaryString.charCodeAt(i); // Her byte'ı array'e aktar
+//   }
+//   return bytes;
+// };
 
-export const addItem = async (
-  title,
-  text,
-  selectedProblem,
-  imageUri, // imageUri Base64 formatında
-  roomGroupName,
-) => {
-  const imageData = imageUri.replace(/^data:image\/[a-z]+;base64,/, ''); // Base64 başlığını temizle
-  const imageByteArray = base64ToByteArray(imageData); // Base64'ü byte array'e çevir
+// export const addItem = async (
+//   title,
+//   text,
+//   selectedProblem,
+//   imageUri, // imageUri Base64 formatında
+//   roomGroupName,
+// ) => {
+//   const imageData = imageUri.replace(/^data:image\/[a-z]+;base64,/, ''); // Base64 başlığını temizle
+//   const imageByteArray = base64ToByteArray(imageData); // Base64'ü byte array'e çevir
 
-  try {
-    const response = await fetch('http://192.168.1.36:5000/tasks', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        title,
-        description: text,
-        problem: selectedProblem,
-        image: imageByteArray, // Byte array formatında image verisi gönder
-        room: roomGroupName,
-      }),
-    });
+//   try {
+//     const response = await fetch('http://192.168.1.36:5000/tasks', {
+//       method: 'POST',
+//       headers: {'Content-Type': 'application/json'},
+//       body: JSON.stringify({
+//         title,
+//         description: text,
+//         problem: selectedProblem,
+//         image: imageByteArray, // Byte array formatında image verisi gönder
+//         room: roomGroupName,
+//       }),
+//     });
 
-    if (!response.ok) {
-      throw new Error('Error adding item.');
-    }
-    return true;
-  } catch (error) {
-    console.error('Error adding item:', error);
-    return false;
-  }
-};
+//     if (!response.ok) {
+//       throw new Error('Error adding item.');
+//     }
+//     return true;
+//   } catch (error) {
+//     console.error('Error adding item:', error);
+//     return false;
+//   }
+// };

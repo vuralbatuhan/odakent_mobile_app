@@ -42,8 +42,14 @@ const Detail = ({route, navigation, socket}) => {
   const [statu_id, setStatu_id] = useState(initialStatuId);
   const [taskImageUri, setTaskImageUri] = useState(null);
 
-  const filePath =
-    'data/user/0/comsocketapp2/cache/rn/image/picker/lib/temp/f521757e+e2f5+4766+b528+4f2a1197319djpg=';
+  let base64String = '';
+  const buffer = Buffer.from(image);
+  base64String = buffer.toString('base64');
+
+  let imageUriByte = '';
+  if (base64String) {
+    imageUriByte = `data:image/jpeg;base64,${base64String}`;
+  }
 
   // const getBase64Image = async filePath => {
   //   try {
@@ -90,6 +96,7 @@ const Detail = ({route, navigation, socket}) => {
         console.error('Mesajlar alınırken hata oluştu:', error);
       }
     };
+    console.log(image);
     getMessages();
     fetchTaskDetails();
   }, [room, statu_id, id]);
@@ -187,10 +194,10 @@ const Detail = ({route, navigation, socket}) => {
       <ScrollView style={styles.scrollViewContainer}>
         <Text style={styles.titleText}>{title}</Text>
         <Text style={styles.itemText}>{description}</Text>
-        {taskImageUri ? (
+        {imageUriByte ? (
           <Image
-            source={{uri: taskImageUri}}
-            style={{width: 300, height: 200}}
+            source={{uri: imageUriByte}}
+            style={{width: 100, height: 100}}
             onError={error => {
               console.error('Resim yüklenemedi:', error.nativeEvent);
             }}
@@ -198,12 +205,6 @@ const Detail = ({route, navigation, socket}) => {
         ) : (
           <Text>Resim yüklenemedi</Text>
         )}
-        <Image
-          source={{
-            uri: 'file:///data/user/0/com.socketapp2/cache/rn_image_picker_lib_temp_a4ce060f-72bf-48fb-b9e8-5e0f29034994.jpg',
-          }}
-          style={{width: 100, height: 100}}
-        />
 
         <Text style={styles.chatTitle}>SOHBET</Text>
         <View>
