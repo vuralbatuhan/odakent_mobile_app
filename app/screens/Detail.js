@@ -51,19 +51,6 @@ const Detail = ({route, navigation, socket}) => {
     imageUriByte = `data:image/jpeg;base64,${base64String}`;
   }
 
-  // const getBase64Image = async filePath => {
-  //   try {
-  //     const base64String = await RNFS.readFile(filePath, 'base64');
-  //     return base64String;
-  //   } catch (error) {
-  //     console.error("Resim Base64'e çevrilemedi:", error);
-  //   }
-  // };
-
-  // getBase64Image(filePath).then(base64String => {
-  //   console.log(base64String); // Bu Base64 string'ini Image bileşeninde kullanabilirsiniz.
-  // });
-
   useEffect(() => {
     const backHandler = BackHandler.addEventListener(
       'hardwareBackPress',
@@ -96,7 +83,6 @@ const Detail = ({route, navigation, socket}) => {
         console.error('Mesajlar alınırken hata oluştu:', error);
       }
     };
-    console.log(image);
     getMessages();
     fetchTaskDetails();
   }, [room, statu_id, id]);
@@ -180,8 +166,7 @@ const Detail = ({route, navigation, socket}) => {
       const data = await response.json();
 
       if (data[0]?.image) {
-        // Resize image before displaying it
-        const base64Image = await data[0].image.uri; // Resize the image
+        const base64Image = await data[0].image.uri;
         setTaskImageUri(base64Image);
       }
     } catch (error) {

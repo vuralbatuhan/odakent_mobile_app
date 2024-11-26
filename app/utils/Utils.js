@@ -1,9 +1,10 @@
 import {launchImageLibrary, launchCamera} from 'react-native-image-picker';
-import {Alert} from 'react-native';
+import {Alert, Linking} from 'react-native';
 import {PermissionsAndroid} from 'react-native';
 import RNFS from 'react-native-fs';
 import {Buffer} from 'buffer';
 import path from 'react-native-path';
+import DocumentPicker from 'react-native-document-picker';
 
 const requestCameraPermission = async () => {
   try {
@@ -48,7 +49,45 @@ const getFileExtension = fileUri => {
 export const pickFile = async (setFileUri, task_id) => {
   Alert.alert('Seçiniz', 'Eklemek istediğiniz dosyayı seçin:', [
     {
-      text: 'Dosya (PDF, Word)',
+      text: 'Dosya (PDF)',
+      onPress: async () => {
+        try {
+          const result = await DocumentPicker.pickSingle({
+            type: [DocumentPicker.types.allFiles],
+            allowMultiSelection: false,
+          });
+          console.log(result);
+
+          console.log('Seçilen dosya:', result);
+          console.log('Seçilen dosya uri:', result.uri);
+
+          await RNFS.readFile(result.uri, 'base64').then(data => {});
+
+          if (!result.uri) {
+            console.log('Dosya URI bulunamadı:', result);
+            throw new Error('Dosya URI alınamadı');
+          }
+
+          const contentUri = result.uri;
+          setFileUri(contentUri);
+
+          const extension = getFileExtension(contentUri);
+
+          const byteaData = await uriToBytea(contentUri);
+
+          await sendToDocuments(byteaData, extension, task_id);
+        } catch (error) {
+          console.error('Hata:', error);
+          if (DocumentPicker.isCancel(error)) {
+            console.log('Kullanıcı dosya seçimini iptal etti');
+          } else {
+            console.error('Dosya seçme hatası: ', error);
+          }
+        }
+      },
+    },
+    {
+      text: 'Galeri',
       onPress: async () => {
         const result = await launchImageLibrary({
           includeBase64: false,
@@ -56,7 +95,7 @@ export const pickFile = async (setFileUri, task_id) => {
           quality: 1,
           maxWidth: 100,
           maxHeight: 100,
-          mediaType: 'mixed',
+          mediaType: 'document',
         });
 
         if (result.didCancel) {
@@ -68,7 +107,6 @@ export const pickFile = async (setFileUri, task_id) => {
           setFileUri(uri);
           const extension = getFileExtension(uri);
           const byteaData = await uriToBytea(uri);
-          byteaData;
           await sendToDocuments(byteaData, extension, task_id);
         }
       },
@@ -100,7 +138,6 @@ export const pickFile = async (setFileUri, task_id) => {
           setFileUri(uri);
           const extension = getFileExtension(uri);
           const byteaData = await uriToBytea(uri);
-          byteaData;
           await sendToDocuments(byteaData, extension, task_id);
         }
       },
@@ -110,6 +147,20 @@ export const pickFile = async (setFileUri, task_id) => {
       style: 'cancel',
     },
   ]);
+};
+
+const convertUriToFilePath = async uri => {
+  try {
+    const filePath = await RNFS.copyAssetsFileIOS(
+      uri,
+      RNFS.TemporaryDirectoryPath + '/tempfile',
+    );
+    console.log('Dönüştürülmüş dosya yolu:', filePath);
+    return filePath;
+  } catch (error) {
+    console.error('URI dönüştürme hatası:', error);
+    throw new Error('Dosya yoluna erişilemedi');
+  }
 };
 
 export const pickFileMessages = async (
@@ -121,7 +172,46 @@ export const pickFileMessages = async (
 ) => {
   Alert.alert('Seçiniz', 'Eklemek istediğiniz dosyayı seçin:', [
     {
-      text: 'Dosya (PDF, Word)',
+      text: 'Dosya (PDF)',
+      onPress: async () => {
+        try {
+          const result = await DocumentPicker.pickSingle({
+            type: [DocumentPicker.types.allFiles],
+            allowMultiSelection: false,
+          });
+          console.log(result);
+
+          console.log('Seçilen dosya:', result);
+          console.log('Seçilen dosya uri:', result.uri);
+
+          await RNFS.readFile(result.uri, 'base64').then(data => {});
+
+          if (!result.uri) {
+            console.log('Dosya URI bulunamadı:', result);
+            throw new Error('Dosya URI alınamadı');
+          }
+
+          const contentUri = result.uri;
+          setFileUri(contentUri);
+
+          const extension = getFileExtension(contentUri);
+
+          const byteaData = await uriToBytea(contentUri);
+
+          await sendToDocuments(byteaData, extension, task_id);
+          await sendToMessages(room, room_id, username, byteaData, task_id);
+        } catch (error) {
+          console.error('Hata:', error);
+          if (DocumentPicker.isCancel(error)) {
+            console.log('Kullanıcı dosya seçimini iptal etti');
+          } else {
+            console.error('Dosya seçme hatası: ', error);
+          }
+        }
+      },
+    },
+    {
+      text: 'Galeri',
       onPress: async () => {
         const result = await launchImageLibrary({
           includeBase64: false,
@@ -129,7 +219,7 @@ export const pickFileMessages = async (
           quality: 1,
           maxWidth: 100,
           maxHeight: 100,
-          mediaType: 'mixed',
+          mediaType: 'photo',
         });
 
         if (result.didCancel) {
@@ -141,7 +231,6 @@ export const pickFileMessages = async (
           setFileUri(uri);
           const extension = getFileExtension(uri);
           const byteaData = await uriToBytea(uri);
-          byteaData;
           await sendToDocuments(byteaData, extension, task_id);
           await sendToMessages(room, room_id, username, byteaData, task_id);
         }
@@ -157,7 +246,7 @@ export const pickFileMessages = async (
         }
 
         const result = await launchCamera({
-          mediaType: 'mixed',
+          mediaType: 'video',
           cameraType: 'back',
           includeBase64: false,
           quality: 1,
@@ -187,9 +276,36 @@ export const pickFileMessages = async (
   ]);
 };
 
+// const sendToDocuments = async (byteaData, extension, task_id) => {
+//   const hexData = byteaData.toString('hex');
+//   const formattedData = `\\x${hexData}`;
+
+//   try {
+//     const response = await fetch('http://192.168.1.36:5000/documents', {
+//       method: 'POST',
+//       headers: {
+//         'Content-Type': 'application/json',
+//       },
+//       body: JSON.stringify({
+//         task_id: task_id,
+//         dosya: formattedData,
+//         ext: extension,
+//       }),
+//     });
+
+//     const result = await response.json();
+//     if (result.success) {
+//     } else {
+//       Alert.alert('Hata', result.message);
+//     }
+//   } catch (error) {
+//     console.error('Backend bağlantı hatası:', error);
+//     Alert.alert('Hata', 'Bir hata oluştu.');
+//   }
+// };
+
 const sendToDocuments = async (byteaData, extension, task_id) => {
-  const hexData = byteaData.toString('hex');
-  const formattedData = `\\x${hexData}`;
+  const formattedData = `\\x${byteaData}`;
 
   try {
     const response = await fetch('http://192.168.1.36:5000/documents', {
@@ -204,16 +320,31 @@ const sendToDocuments = async (byteaData, extension, task_id) => {
       }),
     });
 
-    const result = await response.json();
-    if (result.success) {
-    } else {
-      Alert.alert('Hata', result.message);
+    const textResponse = await response.text();
+    console.log('Raw Yanıt:', textResponse);
+
+    try {
+      const result = JSON.parse(textResponse);
+      console.log('Parsed Yanıt:', result);
+
+      if (result.success) {
+        console.log('Başarı mesajı:', result.message);
+      } else {
+        console.error('Hata mesajı:', result.message);
+      }
+    } catch (parseError) {
+      console.error(
+        'JSON parse hatası:',
+        parseError,
+        'Raw Yanıt:',
+        textResponse,
+      );
     }
   } catch (error) {
-    console.error('Backend bağlantı hatası:', error);
-    Alert.alert('Hata', 'Bir hata oluştu.');
+    console.error('Hata:', error);
   }
 };
+
 const sendToMessages = async (room, room_id, username, image, task_id) => {
   const hexData = image.toString('hex');
   const formattedData = `\\x${hexData}`;
@@ -242,45 +373,3 @@ const sendToMessages = async (room, room_id, username, image, task_id) => {
     Alert.alert('Hata', 'Bir hata oluştu.');
   }
 };
-// const base64ToByteArray = base64 => {
-//   const binaryString = atob(base64); // Base64 string'i binary string'e çevir
-//   const len = binaryString.length;
-//   const bytes = new Uint8Array(len); // Yeni bir byte array oluştur
-//   for (let i = 0; i < len; i++) {
-//     bytes[i] = binaryString.charCodeAt(i); // Her byte'ı array'e aktar
-//   }
-//   return bytes;
-// };
-
-// export const addItem = async (
-//   title,
-//   text,
-//   selectedProblem,
-//   imageUri, // imageUri Base64 formatında
-//   roomGroupName,
-// ) => {
-//   const imageData = imageUri.replace(/^data:image\/[a-z]+;base64,/, ''); // Base64 başlığını temizle
-//   const imageByteArray = base64ToByteArray(imageData); // Base64'ü byte array'e çevir
-
-//   try {
-//     const response = await fetch('http://192.168.1.36:5000/tasks', {
-//       method: 'POST',
-//       headers: {'Content-Type': 'application/json'},
-//       body: JSON.stringify({
-//         title,
-//         description: text,
-//         problem: selectedProblem,
-//         image: imageByteArray, // Byte array formatında image verisi gönder
-//         room: roomGroupName,
-//       }),
-//     });
-
-//     if (!response.ok) {
-//       throw new Error('Error adding item.');
-//     }
-//     return true;
-//   } catch (error) {
-//     console.error('Error adding item:', error);
-//     return false;
-//   }
-// };
