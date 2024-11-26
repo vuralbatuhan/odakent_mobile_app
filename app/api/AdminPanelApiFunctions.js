@@ -70,14 +70,20 @@ export const createStatu = async statu => {
   }
 };
 
-export const createUser = async (username, password, room, user_type) => {
+export const createUser = async (
+  username,
+  password,
+  room,
+  user_type,
+  user_type_id,
+) => {
   try {
     const response = await fetch('http://192.168.1.36:5000/register', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({username, password, room, user_type}),
+      body: JSON.stringify({username, password, room, user_type, user_type_id}),
     });
 
     const result = await response.json();

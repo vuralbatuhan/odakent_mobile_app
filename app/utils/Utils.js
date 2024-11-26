@@ -149,20 +149,6 @@ export const pickFile = async (setFileUri, task_id) => {
   ]);
 };
 
-const convertUriToFilePath = async uri => {
-  try {
-    const filePath = await RNFS.copyAssetsFileIOS(
-      uri,
-      RNFS.TemporaryDirectoryPath + '/tempfile',
-    );
-    console.log('Dönüştürülmüş dosya yolu:', filePath);
-    return filePath;
-  } catch (error) {
-    console.error('URI dönüştürme hatası:', error);
-    throw new Error('Dosya yoluna erişilemedi');
-  }
-};
-
 export const pickFileMessages = async (
   room,
   room_id,
@@ -179,7 +165,7 @@ export const pickFileMessages = async (
             type: [DocumentPicker.types.allFiles],
             allowMultiSelection: false,
           });
-          console.log(result);
+          console.log('result', result);
 
           console.log('Seçilen dosya:', result);
           console.log('Seçilen dosya uri:', result.uri);
@@ -199,7 +185,14 @@ export const pickFileMessages = async (
           const byteaData = await uriToBytea(contentUri);
 
           await sendToDocuments(byteaData, extension, task_id);
-          await sendToMessages(room, room_id, username, byteaData, task_id);
+          await sendToMessages(
+            room,
+            room_id,
+            username,
+            byteaData,
+            task_id,
+            extension,
+          );
         } catch (error) {
           console.error('Hata:', error);
           if (DocumentPicker.isCancel(error)) {
@@ -222,6 +215,9 @@ export const pickFileMessages = async (
           mediaType: 'photo',
         });
 
+        console.log('result', result);
+        console.log('type', result.assets[0].type);
+
         if (result.didCancel) {
           console.log('User canceled file picker');
         } else if (result.errorCode) {
@@ -232,7 +228,14 @@ export const pickFileMessages = async (
           const extension = getFileExtension(uri);
           const byteaData = await uriToBytea(uri);
           await sendToDocuments(byteaData, extension, task_id);
-          await sendToMessages(room, room_id, username, byteaData, task_id);
+          await sendToMessages(
+            room,
+            room_id,
+            username,
+            byteaData,
+            task_id,
+            extension,
+          );
         }
       },
     },
@@ -265,7 +268,14 @@ export const pickFileMessages = async (
           const byteaData = await uriToBytea(uri);
           byteaData;
           await sendToDocuments(byteaData, extension, task_id);
-          await sendToMessages(room, room_id, username, byteaData, task_id);
+          await sendToMessages(
+            room,
+            room_id,
+            username,
+            byteaData,
+            task_id,
+            extension,
+          );
         }
       },
     },
@@ -275,34 +285,6 @@ export const pickFileMessages = async (
     },
   ]);
 };
-
-// const sendToDocuments = async (byteaData, extension, task_id) => {
-//   const hexData = byteaData.toString('hex');
-//   const formattedData = `\\x${hexData}`;
-
-//   try {
-//     const response = await fetch('http://192.168.1.36:5000/documents', {
-//       method: 'POST',
-//       headers: {
-//         'Content-Type': 'application/json',
-//       },
-//       body: JSON.stringify({
-//         task_id: task_id,
-//         dosya: formattedData,
-//         ext: extension,
-//       }),
-//     });
-
-//     const result = await response.json();
-//     if (result.success) {
-//     } else {
-//       Alert.alert('Hata', result.message);
-//     }
-//   } catch (error) {
-//     console.error('Backend bağlantı hatası:', error);
-//     Alert.alert('Hata', 'Bir hata oluştu.');
-//   }
-// };
 
 const sendToDocuments = async (byteaData, extension, task_id) => {
   const formattedData = `\\x${byteaData}`;
@@ -345,7 +327,14 @@ const sendToDocuments = async (byteaData, extension, task_id) => {
   }
 };
 
-const sendToMessages = async (room, room_id, username, image, task_id) => {
+const sendToMessages = async (
+  room,
+  room_id,
+  username,
+  image,
+  task_id,
+  extension,
+) => {
   const hexData = image.toString('hex');
   const formattedData = `\\x${hexData}`;
   try {
@@ -360,6 +349,7 @@ const sendToMessages = async (room, room_id, username, image, task_id) => {
         username: username,
         image: formattedData,
         task_id: task_id,
+        ext: extension,
       }),
     });
 

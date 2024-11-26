@@ -5,14 +5,6 @@ const {Server} = require('socket.io');
 const {Pool} = require('pg');
 const {Buffer} = require('buffer');
 
-// const pool = new Pool({
-//   user: "isler_test",
-//   host: "10.0.0.65",
-//   database: "odakent_isler",
-//   password: "isler_test",
-//   port: 5432,
-// });
-
 const pool = new Pool({
   user: 'postgres',
   host: 'localhost',
@@ -21,9 +13,6 @@ const pool = new Pool({
   port: 5432,
 });
 
-// const app = express();
-// app.use(cors());
-// app.use(express.json());
 const app = express();
 
 app.use(cors());
@@ -46,39 +35,8 @@ io.on('connection', socket => {
     console.log(`${roomName} odasına katıldınız: ${socket.id}`);
   });
 
-  // socket.on('message', async data => {
-  //   const {room, username, message, task_id, image, time} = data;
-
-  //   const query = `
-  //     INSERT INTO messages (room, username, message, task_id, image, time)
-  //     VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;
-  //   `;
-
-  //   try {
-  //     const result = await pool.query(query, [
-  //       room,
-  //       username,
-  //       message || null,
-  //       image || null,
-  //       task_id,
-  //       time,
-  //     ]);
-
-  //     const savedMessage = result.rows[0];
-
-  //     io.to(room).emit('messageReturn', {
-  //       ...data,
-  //       id: savedMessage.id,
-  //       timestamp: savedMessage,
-  //     });
-
-  //     console.log(`Mesaj gönderildi: ${message || image} - Oda: ${room}`);
-  //   } catch (error) {
-  //     console.error('Mesaj kaydedilirken hata:', error);
-  //   }
-  // });
   socket.on('message', async data => {
-    const {room, username, message, task_id, image, time} = data;
+    const {room_id, username, message, task_id, image, time} = data;
 
     const currentTime =
       time ||
@@ -91,13 +49,13 @@ io.on('connection', socket => {
     }
 
     const query = `
-        INSERT INTO messages (room, username, message, task_id, image, time)
+        INSERT INTO messages (room_id, username, message, task_id, image, time)
         VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;
     `;
 
     try {
       const result = await pool.query(query, [
-        room,
+        room_id,
         username,
         message || null,
         task_id,
@@ -107,7 +65,7 @@ io.on('connection', socket => {
 
       const savedMessage = result.rows[0];
 
-      io.to(room).emit('messageReturn', {
+      io.to(room_id).emit('messageReturn', {
         ...data,
         id: savedMessage.id,
         timestamp: savedMessage.timestamp,
@@ -117,7 +75,7 @@ io.on('connection', socket => {
       console.log(
         `Message sent: ${
           message || 'Image'
-        } - Room: ${room} - Task ID: ${task_id}`,
+        } - Room_id: ${room_id} - Task ID: ${task_id}`,
       );
     } catch (error) {
       console.error('Error saving message:', error);
@@ -126,12 +84,12 @@ io.on('connection', socket => {
 });
 
 app.post('/messages', async (req, res) => {
-  const {room, room_id, username, image, task_id} = req.body;
+  const {room, room_id, username, image, task_id, ext} = req.body;
 
   try {
     const result = await pool.query(
-      `INSERT INTO messages (room, room_id, username, image, task_id) VALUES ($1, $2, $3, $4, $5) RETURNING *;`,
-      [room, room_id, username, image, task_id],
+      `INSERT INTO messages (room, room_id, username, image, task_id, ext) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;`,
+      [room, room_id, username, image, task_id, ext],
     );
 
     if (result.rows.length > 0) {
@@ -198,9 +156,9 @@ app.post('/rooms', async (req, res) => {
 });
 
 app.post('/register', async (req, res) => {
-  const {username, password, room, user_type} = req.body;
+  const {username, password, room, user_type, user_type_id} = req.body;
 
-  const query = `INSERT INTO users (username, password, room, user_type) VALUES ($1, $2, $3, $4) RETURNING *;`;
+  const query = `INSERT INTO users (username, password, room, user_type, user_type_id) VALUES ($1, $2, $3, $4, $5) RETURNING *;`;
 
   try {
     const result = await pool.query(query, [
@@ -208,6 +166,7 @@ app.post('/register', async (req, res) => {
       password,
       room,
       user_type,
+      user_type_id,
     ]);
     res.status(201).json(result.rows[0]);
   } catch (error) {
@@ -304,28 +263,28 @@ app.get('/users/:username/:password', async (req, res) => {
   }
 });
 
-app.get('/messages/:room', async (req, res) => {
-  const room = req.params.room;
+app.get('/messages/:room_id', async (req, res) => {
+  const room_id = req.params.room_id;
 
-  const query = ` SELECT * FROM messages WHERE room = $1 ORDER BY id ASC`;
+  const query = ` SELECT * FROM messages WHERE room_id = $1 ORDER BY id ASC`;
 
   try {
-    const result = await pool.query(query, [room]);
+    const result = await pool.query(query, [room_id]);
     res.json(result.rows);
   } catch (error) {
     res.status(500).json({message: 'Mesajlar alınırken hata oluştu.'});
   }
 });
 
-app.get('/messages/:room/:task_id', async (req, res) => {
-  const room = req.params.room;
+app.get('/messages/:room_id/:task_id', async (req, res) => {
+  const room_id = req.params.room_id;
   const id = req.params.task_id;
 
   const query =
-    ' SELECT * FROM messages WHERE room = $1 AND task_id = $2 ORDER BY(id) ASC';
+    ' SELECT * FROM messages WHERE room_id = $1 AND task_id = $2 ORDER BY(id) ASC';
 
   try {
-    const result = await pool.query(query, [room, id]);
+    const result = await pool.query(query, [room_id, id]);
     res.json(result.rows);
   } catch (error) {
     res.status(500).json({message: 'Mesajlar alınırken hata oluştu.'});
@@ -344,13 +303,13 @@ app.get('/tasks', async (req, res) => {
   }
 });
 
-app.get('/tasks/:room', async (req, res) => {
-  const room = req.params.room;
-  const query = `SELECT * FROM tasks where room = $1 ORDER BY statu_id, problem_id ASC;
+app.get('/tasks/:room_id', async (req, res) => {
+  const room_id = req.params.room_id;
+  const query = `SELECT * FROM tasks where room_id = $1 ORDER BY statu_id, problem_id ASC;
 `;
 
   try {
-    const result = await pool.query(query, [room]);
+    const result = await pool.query(query, [room_id]);
     res.json(result.rows);
   } catch (error) {
     res.status(500).json({message: 'Task yüklenemedi'});
@@ -370,14 +329,14 @@ app.get('/tasks/admin/:problem', async (req, res) => {
   }
 });
 
-app.get('/tasks/:problem/:room', async (req, res) => {
-  const problem = req.params.problem;
-  const room = req.params.room;
+app.get('/tasks/:problem_id/:room_id', async (req, res) => {
+  const problem_id = req.params.problem_id;
+  const room_id = req.params.room_id;
 
-  const query = `SELECT * FROM tasks WHERE problem = $1 AND room = $2 ORDER BY statu_id ASC`;
+  const query = `SELECT * FROM tasks WHERE problem_id = $1 AND room_id = $2 ORDER BY statu_id ASC`;
 
   try {
-    const result = await pool.query(query, [problem, room]);
+    const result = await pool.query(query, [problem_id, room_id]);
     res.json(result.rows);
   } catch (error) {
     res.status(500).json({message: 'Task yüklenemedi'});

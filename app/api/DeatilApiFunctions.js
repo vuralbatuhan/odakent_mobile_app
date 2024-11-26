@@ -1,9 +1,9 @@
-export const fetchMessages = async (room, id) => {
-  if (!room) throw new Error('Room bilgisi eksik.');
+export const fetchMessages = async (room_id, id) => {
+  if (!room_id) throw new Error('Room bilgisi eksik.');
 
   try {
     const response = await fetch(
-      `http://192.168.1.36:5000/messages/${room}/${id}`,
+      `http://192.168.1.36:5000/messages/${room_id}/${id}`,
     );
     if (!response.ok) {
       throw new Error('Mesajlar alınırken hata oluştu: ' + response.statusText);
@@ -61,9 +61,9 @@ export const fetchTaskDetails = async (problem_id, room_id, id) => {
       `http://your-backend-url/tasks/${problem_id}/${room_id}/${id}`,
     );
     const data = await response.json();
-    return data; // API'den dönen veriyi return ediyoruz
+    return data;
   } catch (error) {
     console.error('Veri alınırken hata oluştu:', error);
-    throw error; // Hata durumunda hata fırlatıyoruz
+    throw error;
   }
 };

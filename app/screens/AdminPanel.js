@@ -49,6 +49,7 @@ const AdminPanel = ({navigation}) => {
   const [filteredStatuItems, setfilteredStatuItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRoom, setSelectedRoom] = useState(null);
+  const [userTypeId, setUserTypeId] = useState(null);
   const roles = [
     {label: 'User', value: 'user'},
     {label: 'Admin', value: 'admin'},
@@ -90,8 +91,10 @@ const AdminPanel = ({navigation}) => {
   useEffect(() => {
     if (role === 'admin') {
       setSelectedRoom('admin');
+      setUserTypeId(2);
     } else {
       setSelectedRoom(null);
+      setUserTypeId(1);
     }
   }, [role]);
   const handleCreateRoom = async () => {
@@ -170,7 +173,13 @@ const AdminPanel = ({navigation}) => {
   };
   const handleSaveUser = async () => {
     try {
-      const result = await createUser(username, password, selectedRoom, role);
+      const result = await createUser(
+        username,
+        password,
+        selectedRoom,
+        role,
+        userTypeId,
+      );
       console.log('User created successfully:', result);
       Alert.alert('Başarılı', 'Kullanıcı başarıyla oluşturuldu.');
       closeAndClear;
@@ -381,9 +390,6 @@ const AdminPanel = ({navigation}) => {
               value={role}
               onChange={item => setRole(item.value)}
               style={styles.dropdown}
-              // renderLeftIcon={() => (
-              //   <Feather style={styles.icon} name="user" size={20} />
-              // )}
             />
             {role !== 'admin' && (
               <Dropdown
@@ -394,13 +400,6 @@ const AdminPanel = ({navigation}) => {
                 value={selectedRoom}
                 onChange={item => setSelectedRoom(item.value)}
                 style={styles.dropdown}
-                // renderLeftIcon={() => (
-                //   <MaterialCommunityIcons
-                //     style={styles.icon}
-                //     name="office-building"
-                //     size={20}
-                //   />
-                // )}
               />
             )}
             <View style={styles.modalButtons}>

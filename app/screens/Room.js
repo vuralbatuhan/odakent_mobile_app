@@ -41,7 +41,7 @@ const Room = ({navigation}) => {
             },
           );
           const data = await response.json();
-          if (data.user_type_id === 0) {
+          if (data.user_type_id === 2) {
             navigation.replace('AdminTask', {
               username: storedUsername,
               isChecked: true,
@@ -105,7 +105,7 @@ const Room = ({navigation}) => {
           },
         );
         const userData = await userResponse.json();
-        if (userData.user_type_id === 0) {
+        if (userData.user_type_id === 2) {
           navigation.replace('AdminTask', {
             username: username,
             isChecked: isChecked,

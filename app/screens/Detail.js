@@ -22,6 +22,7 @@ import {Buffer} from 'buffer';
 import {RNFS} from 'react-native-fs';
 import Video from 'react-native-video';
 import ImageResizer from 'react-native-image-resizer';
+import Pdf from 'react-native-pdf';
 
 const Detail = ({route, navigation, socket}) => {
   const {
@@ -49,8 +50,12 @@ const Detail = ({route, navigation, socket}) => {
 
   let imageUriByte = '';
   if (base64String) {
-    imageUriByte = `data:image/jpeg;base64,${base64String}`;
+    imageUriByte = `data:application/pdf;base64,${base64String}`;
   }
+  // let imageUriByte = '';
+  // if (base64String) {
+  //   imageUriByte = `data:iapplication/pdf;base64,${base64String}`;
+  // }
 
   const resizeImage = async uri => {
     try {
@@ -61,7 +66,6 @@ const Detail = ({route, navigation, socket}) => {
         'JPEG',
         80,
       );
-      console.log(resizedImage.uri);
     } catch (error) {
       console.error('Resim boyutlandırma hatası:', error);
     }
@@ -81,13 +85,13 @@ const Detail = ({route, navigation, socket}) => {
   const byteArrayToBase64 = byteArray => {
     const uintArray = new Uint8Array(byteArray);
     const base64String = Buffer.from(uintArray).toString('base64');
-    return `data:image/jpeg;base64,${base64String}`;
+    return `data:application/pdf;base64,${base64String}`;
   };
 
   useEffect(() => {
     const getMessages = async () => {
       try {
-        const messages = await fetchMessages(room, id);
+        const messages = await fetchMessages(room_id, id);
         const updatedMessages = messages.map(msg => {
           if (msg.image && msg.image.data) {
             msg.base64Image = byteArrayToBase64(msg.image.data);
@@ -101,7 +105,7 @@ const Detail = ({route, navigation, socket}) => {
     };
     getMessages();
     fetchTaskDetails();
-  }, [room, statu_id, id]);
+  }, [room_id, statu_id, id]);
 
   useEffect(() => {
     socket.on('messageReturn', data => {
@@ -129,7 +133,7 @@ const Detail = ({route, navigation, socket}) => {
       username: username,
       message: message.trim() ? message : null,
       image: imageUri ? imageUri : null,
-      room: room,
+      room_id: room_id,
       time: timestamp,
       task_id: id,
     };
@@ -142,7 +146,6 @@ const Detail = ({route, navigation, socket}) => {
     setImageUri('');
   };
 
-  // Dosya seçme işlemi
   const handleFilePicker = async () => {
     try {
       const messageFile = await pickFileMessages(
@@ -154,8 +157,7 @@ const Detail = ({route, navigation, socket}) => {
       );
 
       if (messageFile) {
-        // Resmi boyutlandır
-        const resizedImage = await resizeImage(messageFile.uri); // Boyutlandırılmış resim
+        const resizedImage = await resizeImage(messageFile.uri);
         const timestamp = new Date().toLocaleTimeString([], {
           hour: '2-digit',
           minute: '2-digit',
@@ -165,7 +167,7 @@ const Detail = ({route, navigation, socket}) => {
           username: username,
           message: null,
           fileType: messageFile.type.split('/')[0],
-          fileUri: resizedImage, // Boyutlandırılmış resmi kullan
+          fileUri: resizedImage,
           room: room,
           time: timestamp,
           task_id: id,
@@ -176,6 +178,7 @@ const Detail = ({route, navigation, socket}) => {
     } catch (error) {
       console.error('Dosya seçilirken hata:', error);
     }
+    console.log(messageList);
   };
 
   const fetchTaskDetails = async () => {
@@ -252,15 +255,15 @@ const Detail = ({route, navigation, socket}) => {
                         {msg.username}
                       </Text>
 
-                      {msg.fileType === 'video' ? (
-                        <Video
-                          source={{uri: msg.fileUri}}
+                      {msg.ext === '.jpg' || msg.ext === '.png' ? (
+                        <Image
+                          source={{uri: msg.base64Image}}
                           style={{width: 200, height: 200}}
                           controls
-                          resizeMode="contain"
+                          resizeMode="stretch"
                         />
-                      ) : msg.base64Image ? (
-                        <Image
+                      ) : msg.ext === '.pdf' ? (
+                        <Pdf
                           source={{uri: msg.base64Image}}
                           style={styles.chatImage}
                         />
