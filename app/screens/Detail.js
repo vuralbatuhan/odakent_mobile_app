@@ -18,9 +18,10 @@ import {
   deleteTask,
 } from '../api/DeatilApiFunctions.js';
 import {pickFile, pickFileMessages} from '../utils/Utils.js';
-import ImageResizer from 'react-native-image-resizer';
 import {Buffer} from 'buffer';
 import {RNFS} from 'react-native-fs';
+import Video from 'react-native-video';
+import ImageResizer from 'react-native-image-resizer';
 
 const Detail = ({route, navigation, socket}) => {
   const {
@@ -50,6 +51,21 @@ const Detail = ({route, navigation, socket}) => {
   if (base64String) {
     imageUriByte = `data:image/jpeg;base64,${base64String}`;
   }
+
+  const resizeImage = async uri => {
+    try {
+      const resizedImage = await ImageResizer.createResizedImage(
+        uri,
+        800,
+        600,
+        'JPEG',
+        80,
+      );
+      console.log(resizedImage.uri);
+    } catch (error) {
+      console.error('Resim boyutlandırma hatası:', error);
+    }
+  };
 
   useEffect(() => {
     const backHandler = BackHandler.addEventListener(
@@ -126,6 +142,7 @@ const Detail = ({route, navigation, socket}) => {
     setImageUri('');
   };
 
+  // Dosya seçme işlemi
   const handleFilePicker = async () => {
     try {
       const messageFile = await pickFileMessages(
@@ -137,21 +154,24 @@ const Detail = ({route, navigation, socket}) => {
       );
 
       if (messageFile) {
+        // Resmi boyutlandır
+        const resizedImage = await resizeImage(messageFile.uri); // Boyutlandırılmış resim
         const timestamp = new Date().toLocaleTimeString([], {
           hour: '2-digit',
           minute: '2-digit',
         });
 
-        const imageMessage = {
+        const fileMessage = {
           username: username,
           message: null,
-          image: messageFile,
+          fileType: messageFile.type.split('/')[0],
+          fileUri: resizedImage, // Boyutlandırılmış resmi kullan
           room: room,
           time: timestamp,
           task_id: id,
         };
 
-        setMessageList(prevMessages => [...prevMessages, imageMessage]);
+        setMessageList(prevMessages => [...prevMessages, fileMessage]);
       }
     } catch (error) {
       console.error('Dosya seçilirken hata:', error);
@@ -231,14 +251,40 @@ const Detail = ({route, navigation, socket}) => {
                         ]}>
                         {msg.username}
                       </Text>
-                      {msg.base64Image ? (
+
+                      {msg.fileType === 'video' ? (
+                        <Video
+                          source={{uri: msg.fileUri}}
+                          style={{width: 200, height: 200}}
+                          controls
+                          resizeMode="contain"
+                        />
+                      ) : msg.base64Image ? (
                         <Image
                           source={{uri: msg.base64Image}}
                           style={styles.chatImage}
                         />
+                      ) : msg.fileType === 'application' ||
+                        msg.fileType === 'text' ? (
+                        <TouchableOpacity
+                          onPress={() => {
+                            RNFS.downloadFile({
+                              fromUrl: msg.fileUri,
+                              toFile: `${
+                                RNFS.DocumentDirectoryPath
+                              }/${msg.fileUri.split('/').pop()}`,
+                            }).promise.then(res => {
+                              alert('Dosya indirildi!');
+                            });
+                          }}>
+                          <Text style={styles.fileText}>
+                            {msg.fileUri.split('/').pop()} (İndir)
+                          </Text>
+                        </TouchableOpacity>
                       ) : (
                         <Text style={styles.messageText}>{msg.message}</Text>
                       )}
+
                       <Text style={styles.messageTime}>{msg.time}</Text>
                     </View>
                   </View>

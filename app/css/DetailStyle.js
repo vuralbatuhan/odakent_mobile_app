@@ -112,4 +112,9 @@ export default StyleSheet.create({
     color: 'green',
     alignSelf: 'flex-start',
   },
+  fileText: {
+    color: 'blue',
+    textDecorationLine: 'underline',
+    marginVertical: 5,
+  },
 });
