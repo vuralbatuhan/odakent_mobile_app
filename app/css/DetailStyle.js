@@ -49,10 +49,12 @@ export default StyleSheet.create({
     backgroundColor: '#d1f7d6',
   },
   ownMessage: {
+    minWidth: 60,
     maxWidth: 250,
     backgroundColor: '#bae1ff',
   },
   otherMessage: {
+    minWidth: 60,
     maxWidth: 250,
     backgroundColor: '#f7d6d6',
   },

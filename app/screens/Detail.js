@@ -250,6 +250,12 @@ const Detail = ({route, navigation, socket}) => {
     }
   };
 
+  useEffect(() => {
+    if (statu_id) {
+      handleUpdateProblem();
+    }
+  }, [statu_id]);
+
   const handleUpdateProblem = async () => {
     try {
       const updatedTask = await updateProblem(id, statu_id);
@@ -476,13 +482,9 @@ const Detail = ({route, navigation, socket}) => {
                       )}
 
                       <Text style={styles.messageTime}>
-                        {' '}
-                        {new Date(msg.create_date).toLocaleString('en-GB', {
+                        {new Date(msg.create_date).toLocaleString('tr-TR', {
                           hour: '2-digit',
                           minute: '2-digit',
-                          year: 'numeric',
-                          month: '2-digit',
-                          day: '2-digit',
                         })}
                       </Text>
                     </View>
