@@ -8,6 +8,10 @@ import {
   ScrollView,
   ImageBackground,
   BackHandler,
+  Alert,
+  Modal,
+  PermissionsAndroid,
+  Platform,
 } from 'react-native';
 import {SafeAreaView} from 'react-native-safe-area-context';
 import styles from '../css/DetailStyle';
@@ -19,7 +23,7 @@ import {
 } from '../api/DeatilApiFunctions.js';
 import {pickFile, pickFileMessages} from '../utils/Utils.js';
 import {Buffer} from 'buffer';
-import {RNFS} from 'react-native-fs';
+import RNFS from 'react-native-fs';
 import Video from 'react-native-video';
 import ImageResizer from 'react-native-image-resizer';
 import Pdf from 'react-native-pdf';
@@ -43,6 +47,11 @@ const Detail = ({route, navigation, socket}) => {
   const [selectedImage, setSelectedImage] = useState(null);
   const [statu_id, setStatu_id] = useState(initialStatuId);
   const [taskImageUri, setTaskImageUri] = useState(null);
+  const [visible, setVisible] = useState(1);
+  const [buttonStates, setButtonStates] = useState([false, false, false]);
+  const [disabledStates, setDisabledStates] = useState([false, false, false]);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [modalVisibleDelete, setModalVisibleDelete] = useState(false);
 
   let base64String = '';
   const buffer = Buffer.from(image);
@@ -52,20 +61,65 @@ const Detail = ({route, navigation, socket}) => {
   if (base64String) {
     imageUriByte = `data:application/pdf;base64,${base64String}`;
   }
-  // let imageUriByte = '';
-  // if (base64String) {
-  //   imageUriByte = `data:iapplication/pdf;base64,${base64String}`;
-  // }
+  const extractMimeType = base64String => {
+    if (!base64String) {
+      return null;
+    }
+
+    const mimeTypeMatch = base64String.match(/^data:(.*?);base64,/);
+    return mimeTypeMatch ? mimeTypeMatch[1] : null;
+  };
+
+  const requestStoragePermission = async () => {
+    try {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.WRITE_EXTERNAL_STORAGE,
+        {
+          title: 'Depolama İzni Gerekli',
+          message:
+            'Bu uygulama dosya indirme işlemi için depolama iznine ihtiyaç duyar.',
+          buttonNeutral: 'Sonra Sor',
+          buttonNegative: 'Reddet',
+          buttonPositive: 'Kabul Et',
+        },
+      );
+      if (granted === PermissionsAndroid.RESULTS.GRANTED) {
+      } else {
+        Alert.alert(
+          'İzin Gerekli',
+          'Dosya indirme işlemi için depolama iznine ihtiyaç var.',
+        );
+      }
+    } catch (err) {
+      console.warn(err);
+    }
+  };
+
+  // useEffect(() => {
+  //   requestStoragePermission();
+  // }, []);
+
+  const downloadPdfFromBase64 = async (base64Data, fileName) => {
+    try {
+      const cleanedBase64 = base64Data.replace(
+        /^data:application\/\w+;base64,/,
+        '',
+      );
+
+      const filePath = `${RNFS.ExternalStorageDirectoryPath}/Download/${fileName}`;
+
+      await RNFS.writeFile(filePath, cleanedBase64, 'base64');
+
+      Alert.alert('Başarılı!', `Dosya indirildi: ${filePath}`);
+    } catch (error) {
+      console.error('Dosya indirme hatası:', error);
+      Alert.alert('Hata!', 'Dosya indirilemedi.');
+    }
+  };
 
   const resizeImage = async uri => {
     try {
-      const resizedImage = await ImageResizer.createResizedImage(
-        uri,
-        800,
-        600,
-        'JPEG',
-        80,
-      );
+      await ImageResizer.createResizedImage(uri, 800, 600, 'JPEG', 80);
     } catch (error) {
       console.error('Resim boyutlandırma hatası:', error);
     }
@@ -178,7 +232,6 @@ const Detail = ({route, navigation, socket}) => {
     } catch (error) {
       console.error('Dosya seçilirken hata:', error);
     }
-    console.log(messageList);
   };
 
   const fetchTaskDetails = async () => {
@@ -197,19 +250,139 @@ const Detail = ({route, navigation, socket}) => {
     }
   };
 
+  const handleUpdateProblem = async () => {
+    try {
+      const updatedTask = await updateProblem(id, statu_id);
+    } catch (error) {
+      alert('Error updating task: ' + error.message);
+    }
+  };
+
+  const handleDeleteTask = async () => {
+    try {
+      await deleteTask(id);
+      navigation.goBack();
+    } catch (error) {
+      console.error('Silme işlemi başarısız:', error);
+      Alert.alert('Hata', 'Görev silinirken bir hata oluştu.');
+    }
+  };
+
+  const handlePress = index => {
+    const newButtonStates = [false, false, false];
+    newButtonStates[index] = true;
+    setButtonStates(newButtonStates);
+
+    if (index === 0) {
+      setStatu_id(1);
+    } else if (index === 1) {
+      setStatu_id(2);
+    } else if (index === 2) {
+      setStatu_id(3);
+    }
+  };
+  const openModal = imageUri => {
+    setSelectedImage(imageUri);
+    setModalVisible(true);
+  };
+  const closeModal = () => setModalVisible(false);
+
+  useEffect(() => {
+    const newDisabledStates = [false, false, false];
+
+    if (userTypeId === 2) {
+      setVisible(true);
+    } else {
+      setVisible(false);
+    }
+
+    const initialButtonState = [false, false, false];
+    if (statu_id === 1) {
+      initialButtonState[0] = true;
+    } else if (statu_id === 2) {
+      initialButtonState[1] = true;
+      newDisabledStates[0] = true;
+    } else if (statu_id === 3) {
+      initialButtonState[2] = true;
+      newDisabledStates[0] = true;
+      newDisabledStates[1] = true;
+    }
+    setButtonStates(initialButtonState);
+    setDisabledStates(newDisabledStates);
+  }, []);
+
   return (
     <SafeAreaView style={styles.mainContainer}>
       <ScrollView style={styles.scrollViewContainer}>
+        <View style={styles.buttonStatuContainer}>
+          {visible && (
+            <TouchableOpacity
+              onPress={() => visible && handlePress(0)}
+              disabled={disabledStates[0]}
+              style={[
+                styles.buttonStatu,
+                {
+                  backgroundColor: buttonStates[0] ? 'red' : '#d1a8a3',
+                  borderWidth: buttonStates[0] ? 4 : 0,
+                  borderColor: 'darkred',
+                  opacity: 1,
+                },
+              ]}>
+              <Text style={styles.buttonStatuText}>Yapılacak</Text>
+            </TouchableOpacity>
+          )}
+          {visible && (
+            <TouchableOpacity
+              onPress={() => visible && handlePress(1)}
+              disabled={disabledStates[1]}
+              style={[
+                styles.buttonStatu,
+                {
+                  backgroundColor: buttonStates[1] ? '#ffff00' : 'lightyellow',
+                  borderWidth: buttonStates[1] ? 4 : 0,
+                  borderColor: 'gold',
+                  opacity: 1,
+                },
+              ]}>
+              <Text style={styles.buttonStatuText}>Yapılıyor</Text>
+            </TouchableOpacity>
+          )}
+          {visible && (
+            <TouchableOpacity
+              onPress={() => visible && handlePress(2)}
+              disabled={disabledStates[2]}
+              style={[
+                styles.buttonStatu,
+                {
+                  backgroundColor: buttonStates[2] ? 'green' : '#bccfbe',
+                  borderWidth: buttonStates[2] ? 4 : 0,
+                  borderColor: 'darkgreen',
+                  opacity: 1,
+                },
+              ]}>
+              <Text style={styles.buttonStatuText}>Yapıldı</Text>
+            </TouchableOpacity>
+          )}
+          {visible && (
+            <TouchableOpacity
+              onPress={() => setModalVisibleDelete(true)}
+              style={styles.deleteButton}>
+              <Text>sil</Text>
+            </TouchableOpacity>
+          )}
+        </View>
         <Text style={styles.titleText}>{title}</Text>
         <Text style={styles.itemText}>{description}</Text>
         {imageUriByte ? (
-          <Image
-            source={{uri: imageUriByte}}
-            style={{width: 100, height: 100}}
-            onError={error => {
-              console.error('Resim yüklenemedi:', error.nativeEvent);
-            }}
-          />
+          <TouchableOpacity onPress={openModal.bind(null, imageUriByte)}>
+            <Image
+              source={{uri: imageUriByte}}
+              style={{width: 100, height: 100}}
+              onError={error => {
+                console.error('Resim yüklenemedi:', error.nativeEvent);
+              }}
+            />
+          </TouchableOpacity>
         ) : (
           <Text>Resim yüklenemedi</Text>
         )}
@@ -256,39 +429,62 @@ const Detail = ({route, navigation, socket}) => {
                       </Text>
 
                       {msg.ext === '.jpg' || msg.ext === '.png' ? (
-                        <Image
-                          source={{uri: msg.base64Image}}
-                          style={{width: 200, height: 200}}
-                          controls
-                          resizeMode="stretch"
-                        />
-                      ) : msg.ext === '.pdf' ? (
-                        <Pdf
+                        <>
+                          <TouchableOpacity
+                            onPress={openModal.bind(null, msg.base64Image)}>
+                            <Image
+                              source={{uri: msg.base64Image}}
+                              style={{width: 200, height: 200}}
+                              controls
+                              resizeMode="stretch"
+                            />
+                          </TouchableOpacity>
+                          {/* <TouchableOpacity
+                            onPress={() => {
+                              downloadPdfFromBase64(
+                                msg.base64Image,
+                                'downloadDeneme',
+                              );
+                            }}>
+                            <Text>İndir</Text>
+                          </TouchableOpacity> */}
+                        </>
+                      ) : extractMimeType(msg.base64Image) ===
+                        'application/pdf' ? (
+                        <>
+                          <Pdf
+                            source={{uri: msg.base64Image}}
+                            style={styles.chatImage}
+                          />
+                          {/* <TouchableOpacity
+                            onPress={() => {
+                              downloadPdfFromBase64(
+                                msg.base64Image,
+                                'downloadDeneme',
+                              );
+                            }}>
+                            <Text>İndir</Text>
+                          </TouchableOpacity> */}
+                        </>
+                      ) : msg.ext === '.mp4' ? (
+                        <Video
                           source={{uri: msg.base64Image}}
                           style={styles.chatImage}
                         />
-                      ) : msg.fileType === 'application' ||
-                        msg.fileType === 'text' ? (
-                        <TouchableOpacity
-                          onPress={() => {
-                            RNFS.downloadFile({
-                              fromUrl: msg.fileUri,
-                              toFile: `${
-                                RNFS.DocumentDirectoryPath
-                              }/${msg.fileUri.split('/').pop()}`,
-                            }).promise.then(res => {
-                              alert('Dosya indirildi!');
-                            });
-                          }}>
-                          <Text style={styles.fileText}>
-                            {msg.fileUri.split('/').pop()} (İndir)
-                          </Text>
-                        </TouchableOpacity>
                       ) : (
                         <Text style={styles.messageText}>{msg.message}</Text>
                       )}
 
-                      <Text style={styles.messageTime}>{msg.time}</Text>
+                      <Text style={styles.messageTime}>
+                        {' '}
+                        {new Date(msg.create_date).toLocaleString('en-GB', {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit',
+                        })}
+                      </Text>
                     </View>
                   </View>
                 ))}
@@ -313,6 +509,46 @@ const Detail = ({route, navigation, socket}) => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={closeModal}>
+        <SafeAreaView style={styles.modalContainer}>
+          <TouchableOpacity style={styles.closeButton} onPress={closeModal}>
+            <Text style={styles.closeButton}>XXXXX</Text>
+          </TouchableOpacity>
+          <Image source={{uri: selectedImage}} style={styles.modalImage} />
+        </SafeAreaView>
+      </Modal>
+
+      <Modal
+        visible={modalVisibleDelete}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setModalVisibleDelete(false)}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainerDelete}>
+            <Text style={styles.modalTitle}>Silmek İstiyor Musunuz?</Text>
+            <Text style={styles.modalDescription}>
+              Bu işlemi geri alamazsınız. Devam etmek istiyor musunuz?
+            </Text>
+
+            <View style={styles.buttonContainer}>
+              <TouchableOpacity
+                onPress={handleDeleteTask}
+                style={[styles.button, styles.cancelButton]}>
+                <Text style={styles.buttonText}>Evet</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setModalVisibleDelete(false)}
+                style={[styles.button, styles.cancelButton]}>
+                <Text style={styles.buttonText}>Hayır</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };

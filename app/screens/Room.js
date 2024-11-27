@@ -47,7 +47,7 @@ const Room = ({navigation}) => {
               isChecked: true,
             });
           } else {
-            navigation.replace('Task', {
+            navigation.replace('AdminTask', {
               username: storedUsername,
               isChecked: true,
             });
@@ -112,7 +112,7 @@ const Room = ({navigation}) => {
           });
           clearAll();
         } else {
-          navigation.replace('Task', {
+          navigation.replace('AdminTask', {
             username: username,
             isChecked: isChecked,
           });

@@ -54,12 +54,8 @@ export const pickFile = async (setFileUri, task_id) => {
         try {
           const result = await DocumentPicker.pickSingle({
             type: [DocumentPicker.types.allFiles],
-            allowMultiSelection: false,
+            allowMultiSelection: true,
           });
-          console.log(result);
-
-          console.log('Seçilen dosya:', result);
-          console.log('Seçilen dosya uri:', result.uri);
 
           await RNFS.readFile(result.uri, 'base64').then(data => {});
 
@@ -93,9 +89,10 @@ export const pickFile = async (setFileUri, task_id) => {
           includeBase64: false,
           selectionLimit: 1,
           quality: 1,
-          maxWidth: 100,
-          maxHeight: 100,
+          maxWidth: 1920,
+          maxHeight: 1080,
           mediaType: 'document',
+          allowMultiSelection: true,
         });
 
         if (result.didCancel) {
@@ -125,8 +122,9 @@ export const pickFile = async (setFileUri, task_id) => {
           cameraType: 'back',
           includeBase64: false,
           quality: 1,
-          maxWidth: 100,
-          maxHeight: 100,
+          maxWidth: 1920,
+          maxHeight: 1080,
+          allowMultiSelection: true,
         });
 
         if (result.didCancel) {
@@ -163,12 +161,8 @@ export const pickFileMessages = async (
         try {
           const result = await DocumentPicker.pickSingle({
             type: [DocumentPicker.types.allFiles],
-            allowMultiSelection: false,
+            allowMultiSelection: true,
           });
-          console.log('result', result);
-
-          console.log('Seçilen dosya:', result);
-          console.log('Seçilen dosya uri:', result.uri);
 
           await RNFS.readFile(result.uri, 'base64').then(data => {});
 
@@ -210,9 +204,10 @@ export const pickFileMessages = async (
           includeBase64: false,
           selectionLimit: 1,
           quality: 1,
-          maxWidth: 100,
-          maxHeight: 100,
+          maxWidth: 1920,
+          maxHeight: 1080,
           mediaType: 'photo',
+          allowMultiSelection: true,
         });
 
         console.log('result', result);
@@ -253,8 +248,9 @@ export const pickFileMessages = async (
           cameraType: 'back',
           includeBase64: false,
           quality: 1,
-          maxWidth: 100,
-          maxHeight: 100,
+          maxWidth: 1920,
+          maxHeight: 1080,
+          allowMultiSelection: true,
         });
 
         if (result.didCancel) {

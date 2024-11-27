@@ -175,10 +175,10 @@ app.post('/register', async (req, res) => {
 });
 
 app.post('/tasks', async (req, res) => {
-  const {title, description, problem, room, image} = req.body;
+  const {title, description, problem, room, room_id, image} = req.body;
   const imageBuffer = Buffer.from(image, 'base64');
 
-  const query = ` INSERT INTO tasks (title, description, problem, room, image) VALUES ($1, $2, $3, $4, $5) RETURNING *;`;
+  const query = ` INSERT INTO tasks (title, description, problem, room, room_id, image) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;`;
 
   try {
     const result = await pool.query(query, [
@@ -186,6 +186,7 @@ app.post('/tasks', async (req, res) => {
       description,
       problem,
       room,
+      room_id,
       imageBuffer,
     ]);
     res.status(201).json(result.rows[0]);
@@ -305,7 +306,7 @@ app.get('/tasks', async (req, res) => {
 
 app.get('/tasks/:room_id', async (req, res) => {
   const room_id = req.params.room_id;
-  const query = `SELECT * FROM tasks where room_id = $1 ORDER BY statu_id, problem_id ASC;
+  const query = `SELECT * FROM tasks where room_id = $1 ORDER BY statu_id, problem ASC;
 `;
 
   try {
@@ -329,29 +330,29 @@ app.get('/tasks/admin/:problem', async (req, res) => {
   }
 });
 
-app.get('/tasks/:problem_id/:room_id', async (req, res) => {
-  const problem_id = req.params.problem_id;
+app.get('/tasks/:room_id/:problem', async (req, res) => {
+  const problem = req.params.problem;
   const room_id = req.params.room_id;
 
-  const query = `SELECT * FROM tasks WHERE problem_id = $1 AND room_id = $2 ORDER BY statu_id ASC`;
+  const query = `SELECT * FROM tasks WHERE room_id = $1 AND problem = $2 ORDER BY statu_id ASC`;
 
   try {
-    const result = await pool.query(query, [problem_id, room_id]);
+    const result = await pool.query(query, [room_id, problem]);
     res.json(result.rows);
   } catch (error) {
     res.status(500).json({message: 'Task yüklenemedi'});
   }
 });
 
-app.get('/tasks/:problem_id/:room_id/:id', async (req, res) => {
-  const problem_id = req.params.problem_id;
+app.get('/tasks/:problem/:room_id/:id', async (req, res) => {
+  const problem = req.params.problem;
   const room_id = req.params.room_id;
   const id = req.params.id;
 
-  const query = `SELECT * FROM tasks WHERE problem_id = $1 AND room_id = $2 AND id = $3`;
+  const query = `SELECT * FROM tasks WHERE problem = $1 AND room_id = $2 AND id = $3`;
 
   try {
-    const result = await pool.query(query, [problem_id, room_id, id]);
+    const result = await pool.query(query, [problem, room_id, id]);
     res.json(result.rows);
   } catch (error) {
     res.status(500).json({message: 'Task yüklenemedi'});

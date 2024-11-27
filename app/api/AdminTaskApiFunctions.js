@@ -19,7 +19,7 @@ export const fetchRooms = async () => {
 
     const formattedData = data.map(item => ({
       label: item.room,
-      value: item.room,
+      value: item.id,
     }));
 
     return [{label: 'Hepsi', value: 'all'}, ...formattedData];
@@ -36,7 +36,7 @@ export const fetchProblems = async () => {
 
     const formattedData = data.map(item => ({
       label: item.problem,
-      value: item.problem,
+      value: item.id,
     }));
 
     return [{label: 'Hepsi', value: 'all'}, ...formattedData];
@@ -46,10 +46,10 @@ export const fetchProblems = async () => {
   }
 };
 
-export const fetchItems = async (problem, room) => {
+export const fetchItems = async (room_id, problem) => {
   try {
     const response = await fetch(
-      `http://192.168.1.36:5000/tasks/${problem}/${room}`,
+      `http://192.168.1.36:5000/tasks/${room_id}/${problem}`,
     );
     const data = await response.json();
     return data;
@@ -69,12 +69,9 @@ export const fetchAllItems = async () => {
   }
 };
 
-export const fetchAllRoomItems = async (room, problem) => {
+export const fetchAllRoomItems = async room_id => {
   try {
-    const url =
-      problem === 'all'
-        ? `http://192.168.1.36:5000/tasks/${room}`
-        : `http://192.168.1.36:5000/tasks/${room}?problem=${problem}`;
+    const url = `http://192.168.1.36:5000/tasks/${room_id}`;
 
     const response = await fetch(url);
     const data = await response.json();
@@ -104,7 +101,7 @@ export const addItem = async (
   selectedProblem,
   imageUri,
   selectedRoom,
-  fetchAllItems,
+  selectedRoom_id,
 ) => {
   if (text) {
     try {
@@ -117,6 +114,7 @@ export const addItem = async (
           problem: selectedProblem,
           image: imageUri,
           room: selectedRoom,
+          room_id: selectedRoom_id,
         }),
       });
 

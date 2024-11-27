@@ -38,15 +38,18 @@ const AdminTask = ({navigation, route}) => {
   const [text, setText] = useState('');
   const [imageUri, setImageUri] = useState('');
   const [selectedProblem, setSelectedProblem] = useState('all');
+  const [selectedProblem_id, setSelectedProblem_id] = useState();
   const [searchQuery, setSearchQuery] = useState('');
   const [isFocus, setIsFocus] = useState(true);
-  const [userTypeId, setUserTypeId] = useState('');
+  const [userTypeId, setUserTypeId] = useState(1);
   const [visible, setVisible] = useState(false);
+  const [visibleUser, setVisibleUser] = useState(1);
   const [visibleLogout, setVisibleLogout] = useState(true);
   const [modalLogout, setModalLogout] = useState(false);
   const [statu, setStatu] = useState(null);
   const [rooms, setRooms] = useState([]);
   const [selectedRoom, setSelectedRoom] = useState('all');
+  const [selectedRoom_id, setSelectedRoom_id] = useState();
   const [selectedIndex, setSelectedIndex] = useState(3);
   const [statusCounts, setStatusCounts] = useState({
     status1: 0,
@@ -104,6 +107,9 @@ const AdminTask = ({navigation, route}) => {
       try {
         const userData = await fetchUserType(username);
         setUserTypeId(userData.user_type_id);
+        setVisibleUser(userData.user_type_id);
+        setSelectedRoom(userData.room);
+        setSelectedRoom_id(userData.room_id);
       } catch (error) {
         console.error('Hata oluştu:', error);
       }
@@ -135,12 +141,12 @@ const AdminTask = ({navigation, route}) => {
         setSelectedIndex(3);
         setVisible(false);
       } else if (selectedRoom !== 'all' && selectedProblem === 'all') {
-        data = await fetchAllRoomItems(selectedRoom, selectedProblem);
+        data = await fetchAllRoomItems(selectedRoom_id);
         setSearchQuery('');
         setSelectedIndex(3);
         setVisible(false);
       } else {
-        data = await fetchItems(selectedProblem, selectedRoom);
+        data = await fetchItems(selectedRoom_id, selectedProblem);
         setSearchQuery('');
         setSelectedIndex(3);
         setVisible(true);
@@ -172,10 +178,10 @@ const AdminTask = ({navigation, route}) => {
         await addItem(
           title,
           text,
-          selectedProblem,
+          selectedProblem_id,
           byteArray,
           selectedRoom,
-          fetchAllItems,
+          selectedRoom_id,
         );
       } catch (error) {
         console.error('Görüntü dönüştürme sırasında hata:', error);
@@ -187,6 +193,8 @@ const AdminTask = ({navigation, route}) => {
     setImageUri('');
     setModalVisible(false);
     fetchData();
+    console.log('demek', selectedProblem);
+    console.log('demek 2', selectedProblem_id);
   };
   const closeAndReset = () => {
     setTitle('');
@@ -238,46 +246,51 @@ const AdminTask = ({navigation, route}) => {
         </TouchableOpacity>
       )}
 
-      <TouchableOpacity
-        onPress={() => navigation.navigate('AdminPanel')}
-        style={styles.adminButtonContainer}>
-        <Text style={styles.adminButtonText}>Admin Panel</Text>
-      </TouchableOpacity>
+      {visibleUser === 2 && (
+        <TouchableOpacity
+          onPress={() => navigation.navigate('AdminPanel')}
+          style={styles.adminButtonContainer}>
+          <Text style={styles.adminButtonText}>Admin Panel</Text>
+        </TouchableOpacity>
+      )}
 
       <SafeAreaView style={styles.mainContainer}>
         <View style={styles.container}>
           <View>
-            <Dropdown
-              style={styles.dropdown}
-              placeholderStyle={styles.placeholderStyle}
-              selectedTextStyle={styles.selectedTextStyle}
-              inputSearchStyle={styles.inputSearchStyle}
-              iconStyle={styles.iconStyle}
-              data={rooms}
-              search
-              maxHeight={300}
-              width="100%"
-              labelField="label"
-              valueField="value"
-              searchPlaceholder="Search..."
-              value={selectedRoom}
-              onFocus={() => setIsFocus(true)}
-              onBlur={() => setIsFocus(false)}
-              onChange={item => {
-                setSelectedRoom(item.value);
-                if (item.value === 'all') {
-                  fetchAllRoomItems(
-                    item.value,
-                    selectedProblem,
-                    setItems,
-                    setFilteredItems,
-                    setStatu,
-                  );
-                } else {
-                  fetchData();
-                }
-              }}
-            />
+            {visibleUser === 2 && (
+              <Dropdown
+                style={styles.dropdown}
+                placeholderStyle={styles.placeholderStyle}
+                selectedTextStyle={styles.selectedTextStyle}
+                inputSearchStyle={styles.inputSearchStyle}
+                iconStyle={styles.iconStyle}
+                data={rooms}
+                search
+                maxHeight={300}
+                width="100%"
+                labelField="label"
+                valueField="value"
+                searchPlaceholder="Search..."
+                value={selectedRoom}
+                onFocus={() => setIsFocus(true)}
+                onBlur={() => setIsFocus(false)}
+                onChange={item => {
+                  setSelectedRoom(item.value);
+                  setSelectedRoom_id(item.value);
+                  if (item.value === 'all') {
+                    fetchAllRoomItems(
+                      item.value,
+                      selectedProblem,
+                      setItems,
+                      setFilteredItems,
+                      setStatu,
+                    );
+                  } else {
+                    fetchData();
+                  }
+                }}
+              />
+            )}
           </View>
 
           <View>
@@ -299,6 +312,7 @@ const AdminTask = ({navigation, route}) => {
               onBlur={() => setIsFocus(false)}
               onChange={item => {
                 setSelectedProblem(item.value);
+                setSelectedProblem_id(item.value);
                 fetchData();
               }}
             />
@@ -469,7 +483,7 @@ const AdminTask = ({navigation, route}) => {
           />
         </View>
 
-        {visible && (
+        {visible && visibleUser === 1 && (
           <TouchableOpacity
             style={styles.addItemButton}
             onPress={() => setModalVisible(true)}>
